@@ -7,6 +7,8 @@ import { Gem, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -19,14 +21,31 @@ export default function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false)
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    console.log("[v0] Login submit:", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-    })
+ const [error, setError] = useState<string>('');
+const [loading, setLoading] = useState(false);
+const router = useRouter();
+
+async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setLoading(true);
+  setError('');
+
+  const formData = new FormData(event.currentTarget);
+
+  const result = await signIn('credentials', {
+    email:    formData.get('email'),
+    password: formData.get('password'),
+    redirect: false,
+  });
+
+  setLoading(false);
+
+  if (result?.error) {
+    setError('Email o contraseña incorrectos');
+  } else {
+    router.push('/');
   }
+}
 
   return (
     <Card className="w-full max-w-md border-border/60 shadow-xl shadow-primary/5">
@@ -105,8 +124,11 @@ export default function LoginForm() {
               </button>
             </div>
           </div>
-
+{error && (
+  <p className="text-sm text-red-500 text-center">{error}</p>
+)}
           <Button type="submit" className="w-full" style={{ backgroundColor: "#574949" }}>
+            
             Iniciar sesión
           </Button>
         </form>
