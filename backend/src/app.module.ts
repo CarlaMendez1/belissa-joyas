@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsuarioModule } from './usuario/usuario.module';
-import { CategoriaModule } from './categoria/categoria.module';
-import { SubcategoriaModule } from './subcategoria/subcategoria.module';
-import { AuthModule } from './auth/auth.module';
+import { UsuarioModule } from './usuario/usuario.module.js';
+import { CategoriaModule } from './categoria/categoria.module.js';
+import { SubcategoriaModule } from './subcategoria/subcategoria.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { ProductoModule } from './producto/producto.module.js';
+import { VarianteModule } from './variante/variante.module.js';
+import { OpcionModule } from './opcion/opcion.module.js';
+import { CaracteristicaModule } from './caracteristica/caracteristica.module.js';
 
 @Module({
   imports: [
@@ -28,6 +32,10 @@ import { AuthModule } from './auth/auth.module';
     CategoriaModule,
     SubcategoriaModule,
     AuthModule,
+    ProductoModule,
+    VarianteModule,
+    OpcionModule,
+    CaracteristicaModule,
   ],
 })
 export class AppModule {}

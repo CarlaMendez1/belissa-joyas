@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
-import { SubcategoriaService } from './subcategoria.service';
+import { SubcategoriaService } from './subcategoria.service.js';
 
 @Controller('subcategorias')
 export class SubcategoriaController {

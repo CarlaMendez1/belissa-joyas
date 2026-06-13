@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Categoria } from '../categoria/categoria.entity';
-import { EstadoGeneral } from '../categoria/categoria.entity';
+import { Categoria } from '../categoria/categoria.entity.js';
+import { EstadoGeneral } from '../categoria/categoria.entity.js';
 
 @Entity('subcategoria')
 export class Subcategoria {

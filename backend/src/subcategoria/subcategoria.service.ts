@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Subcategoria } from './subcategoria.entity';
-import { EstadoGeneral } from '../categoria/categoria.entity';
+import { Subcategoria } from './subcategoria.entity.js';
+import { EstadoGeneral } from '../categoria/categoria.entity.js';
 
 @Injectable()
 export class SubcategoriaService {

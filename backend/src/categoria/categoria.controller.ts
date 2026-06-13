@@ -2,11 +2,11 @@ import {
   Controller, Get, Post, Patch, Delete,
   Param, Body, UseGuards,
 } from '@nestjs/common';
-import { CategoriaService } from './categoria.service';
-import { CrearCategoriaDto } from './dto/crear-categoria.dto';
-import { ActualizarCategoriaDto } from './dto/actualizar-categoria.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { CategoriaService } from './categoria.service.js';
+import { CrearCategoriaDto } from './dto/crear-categoria.dto.js';
+import { ActualizarCategoriaDto } from './dto/actualizar-categoria.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
 
 @Controller('categorias')
