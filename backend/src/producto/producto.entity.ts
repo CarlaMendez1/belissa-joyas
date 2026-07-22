@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Subcategoria } from '../subcategoria/subcategoria.entity.js';
 
-export enum EstadoProducto { ACTIVO = 'activo', INACTIVO = 'inactivo' }
+export enum EstadoProducto { ACTIVO = 'activa', INACTIVO = 'inactiva' }
 
 @Entity('producto')
 export class Producto {

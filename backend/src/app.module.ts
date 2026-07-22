@@ -9,6 +9,8 @@ import { ProductoModule } from './producto/producto.module.js';
 import { VarianteModule } from './variante/variante.module.js';
 import { OpcionModule } from './opcion/opcion.module.js';
 import { CaracteristicaModule } from './caracteristica/caracteristica.module.js';
+import { CarritoModule } from './carrito/carrito.module.js';
+
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ import { CaracteristicaModule } from './caracteristica/caracteristica.module.js'
     VarianteModule,
     OpcionModule,
     CaracteristicaModule,
+    CarritoModule
   ],
 })
 export class AppModule {}
