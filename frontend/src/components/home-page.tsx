@@ -6,6 +6,7 @@ import { Gem, Search, ShoppingBag, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { useCarrito } from '@/context/carrito-context';
 
 type Category = {
   id: string
@@ -44,11 +45,13 @@ export default function HomePage({
   onSelectSubcategory,
 }: HomePageProps) {
   const [query, setQuery] = useState("")
+  const { setAbierto, totalItems } = useCarrito();
 
 
   const filteredProducts = products.filter((p) => {
   const coincideTexto = `${p.name} ${p.description} ${p.sku}`.toLowerCase().includes(query.toLowerCase());
   const coincideSubcat = selectedSubcategory ? p.id === selectedSubcategory : true;
+  const { setAbierto, totalItems } = useCarrito();
 
   return coincideTexto && coincideSubcat;
 });
@@ -78,13 +81,16 @@ export default function HomePage({
             >
               <User className="h-5 w-5" />
             </button>
-            <button
-              type="button"
-              aria-label="Carrito de compras"
-              className="text-stone-600 transition-colors hover:text-stone-900"
-            >
-              <ShoppingBag className="h-5 w-5" />
-            </button>
+          <button onClick={() => setAbierto(true)} className="relative">
+           <ShoppingBag className="h-5 w-5 text-stone-600 hover:text-amber-700" />
+             {totalItems > 0 && (
+             <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+             {totalItems}
+    </span>
+  )}
+</button>
+             
+
           </div>
         </nav>
       </header>
