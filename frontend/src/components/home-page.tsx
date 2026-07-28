@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useCarrito } from '@/context/carrito-context';
+import Link from 'next/link';
 
 type Category = {
   id: string
@@ -47,11 +48,10 @@ export default function HomePage({
   const [query, setQuery] = useState("")
   const { setAbierto, totalItems } = useCarrito();
 
-
   const filteredProducts = products.filter((p) => {
   const coincideTexto = `${p.name} ${p.description} ${p.sku}`.toLowerCase().includes(query.toLowerCase());
   const coincideSubcat = selectedSubcategory ? p.id === selectedSubcategory : true;
-  const { setAbierto, totalItems } = useCarrito();
+  
 
   return coincideTexto && coincideSubcat;
 });
@@ -142,8 +142,6 @@ export default function HomePage({
                   onClick={() => onSelectCategory?.(isSelected ? null : category.id)}
                   className="text-left"
                 >
-  
-        
                   <Card
                     className={`flex flex-col items-center gap-4 border-stone-200 p-8 text-center transition-colors hover:border-stone-400 ${
                       isSelected ? "border-stone-700 bg-stone-700 text-stone-50" : "bg-white"
@@ -210,26 +208,27 @@ export default function HomePage({
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProducts.map((product) => (
-              <Card
-                key={product.id}
-                className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:border-stone-400 hover:shadow-md"
-              >
-                <div className="flex h-48 items-center justify-center bg-stone-100">
-                  <Gem className="h-12 w-12 text-stone-500" />
-                </div>
-                <div className="flex flex-col gap-2 p-6">
-                  <span className="font-mono text-xs text-stone-500">{product.sku}</span>
-                  <h3 className="font-serif text-xl text-stone-800">{product.name}</h3>
-                  <p className="text-sm leading-relaxed text-stone-500">{product.description}</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4 border-stone-300 text-stone-700 hover:bg-stone-100 hover:text-stone-900"
-                  >
-                    Ver producto
-                  </Button>
-                </div>
-              </Card>
+              <Link key={product.id} href={`/productos/${product.id}`}>
+                <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:border-stone-400 hover:shadow-md cursor-pointer">
+                  <div className="flex h-48 items-center justify-center bg-stone-100">
+                    <Gem className="h-12 w-12 text-stone-500" />
+                  </div>
+                  <div className="flex flex-col gap-2 p-6">
+                    <span className="font-mono text-xs text-stone-500">{product.sku}</span>
+                    <h3 className="font-serif text-xl text-stone-800">{product.name}</h3>
+                    <p className="text-sm leading-relaxed text-stone-500">{product.description}</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4 border-stone-300 text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+                    >
+                      Ver producto
+                    </Button>
+                  </div>
+                </Card>
+              </Link>
+
             ))}
+
           </div>
 
           {filteredProducts.length === 0 && (

@@ -45,12 +45,18 @@ export default function Page() {
     name: s.nombre,
   }));
 
-  const prods = productos.map((p: any) => ({
-  id: String(p.id_subcategoria),
-  sku: p.codigo_sku,
-  name: p.nombre,
-  description: p.descripcion || '',
-}));
+const prods = productos
+  .filter((p: any) => {
+    if (subcategoriaSeleccionada) return String(p.id_subcategoria) === subcategoriaSeleccionada;
+    return true;
+  })
+  .map((p: any) => ({
+    id: String(p.id_producto),
+    sku: p.codigo_sku,
+    name: p.nombre,
+    description: p.descripcion || '',
+  }));
+
 
  
   return (
