@@ -1,16 +1,34 @@
 'use client';
+import { useState } from 'react';
 import { useCarrito } from '@/context/carrito-context';
 import { X, ShoppingBag, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 
 export default function CarritoSidebar() {
-  const { carrito, abierto, setAbierto, eliminarItem, vaciarCarrito } = useCarrito();
+  const { carrito, abierto, setAbierto, eliminarItem, vaciarCarrito, iniciarPago } = useCarrito();
+  const [procesando, setProcesando] = useState(false);
+  const [error, setError] = useState('');
 
   if (!abierto) return null;
 
   const items = carrito?.items || [];
   const subtotal = carrito?.precio_subtotal || 0;
+
+  async function handleFinalizarCompra() {
+    setProcesando(true);
+    setError('');
+    try {
+      const init_point = await iniciarPago();
+      window.location.href = init_point;
+    } catch (err: any) {
+      if (err.message === 'NO_AUTENTICADO') {
+        setError('Iniciá sesión para finalizar la compra.');
+      } else {
+        setError('No se pudo iniciar el pago. Intentá de nuevo.');
+      }
+      setProcesando(false);
+    }
+  }
 
   return (
     <>
@@ -78,9 +96,16 @@ export default function CarritoSidebar() {
                 ${Number(subtotal).toLocaleString('es-AR')}
               </span>
             </div>
-            <Button className="w-full bg-amber-700 hover:bg-amber-800 text-white rounded-full">
-              Finalizar compra
+            <Button
+              onClick={handleFinalizarCompra}
+              disabled={procesando}
+              className="w-full bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+            >
+              {procesando ? 'Redirigiendo...' : 'Finalizar compra'}
             </Button>
+            {error && (
+              <p className="text-xs text-red-500 text-center">{error}</p>
+            )}
             <button
               onClick={vaciarCarrito}
               className="text-xs text-stone-400 hover:text-red-500 text-center transition-colors"

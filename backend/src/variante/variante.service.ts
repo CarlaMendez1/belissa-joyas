@@ -42,6 +42,22 @@ export class VarianteService {
     return variante;
   }
 
+  async update(id: number, dto: Partial<CrearVarianteDto>): Promise<Variante> {
+  const variante = await this.repo.findOneBy({ id_variante: id });
+  if (!variante) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+  if (dto.precio_venta !== undefined) variante.precio_venta = dto.precio_venta;
+  if (dto.stock_disponible !== undefined) variante.stock_disponible = dto.stock_disponible;
+
+  if (dto.caracteristicas !== undefined) {
+    variante.caracteristicas = dto.caracteristicas.length
+      ? await this.caracRepo.findBy({ id_caracteristica: In(dto.caracteristicas) })
+      : [];
+  }
+
+  return this.repo.save(variante);
+}
+
   async bajaLogica(id: number): Promise<Variante> {
     await this.repo.update(id, { estado: EstadoVariante.INACTIVA });
     const variante = await this.repo.findOneBy({ id_variante: id });

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Opcion } from '../opcion/opcion.entity';
+import { Opcion } from '../opcion/opcion.entity.js';
 
 
 @Entity('caracteristica')

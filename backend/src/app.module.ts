@@ -10,6 +10,7 @@ import { VarianteModule } from './variante/variante.module.js';
 import { OpcionModule } from './opcion/opcion.module.js';
 import { CaracteristicaModule } from './caracteristica/caracteristica.module.js';
 import { CarritoModule } from './carrito/carrito.module.js';
+import { PagoModule } from './pago/pago.module.js';
 
 
 @Module({
@@ -38,6 +39,7 @@ import { CarritoModule } from './carrito/carrito.module.js';
     VarianteModule,
     OpcionModule,
     CaracteristicaModule,
+    PagoModule,
     CarritoModule
   ],
 })

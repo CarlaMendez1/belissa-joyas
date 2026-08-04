@@ -66,11 +66,24 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
   };
 
   const totalItems = carrito?.items?.reduce((acc: number, i: any) => acc + i.cantidad, 0) || 0;
-
+const iniciarPago = async () => {
+  if (!token) throw new Error('NO_AUTENTICADO');
+  const res = await fetch(`${API}/pago/crear-preferencia`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message || 'ERROR_SERVIDOR');
+  }
+  const data = await res.json();
+  return data.init_point as string;
+};
   return (
     <CarritoContext.Provider value={{
       carrito, abierto, setAbierto, totalItems,
-      cargarCarrito, agregarItem, eliminarItem, vaciarCarrito,
+      cargarCarrito, agregarItem, eliminarItem, vaciarCarrito, iniciarPago,
+
     }}>
       {children}
     </CarritoContext.Provider>

@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { getProducto, getVariantesPorProducto } from '@/lib/api';
+import { getProducto, getVariantesPorProducto, getOpciones } from '@/lib/api';
 import { useCarrito } from '@/context/carrito-context';
 import { Gem, ArrowLeft, ShoppingBag, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ export default function ProductoPage() {
   const [producto, setProducto] = useState<any>(null);
   const [variantes, setVariantes] = useState<any[]>([]);
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<any>(null);
+  const [seleccion, setSeleccion] = useState<Record<number, string>>({});
+  const [opciones, setOpciones] = useState<any[]>([]);
   const [cantidad, setCantidad] = useState(1);
   const [agregando, setAgregando] = useState(false);
   const [mensaje, setMensaje] = useState('');
@@ -24,12 +26,52 @@ export default function ProductoPage() {
   useEffect(() => {
     if (id) {
       getProducto(Number(id)).then(setProducto);
+      getOpciones().then(setOpciones);
       getVariantesPorProducto(Number(id)).then((data) => {
         setVariantes(data);
-        if (data.length > 0) setVarianteSeleccionada(data[0]);
+        if (data.length > 0) {
+          setVarianteSeleccionada(data[0]);
+          const inicial: Record<number, string> = {};
+          data[0].caracteristicas?.forEach((c: any) => {
+            inicial[c.id_opcion] = c.valor;
+          });
+          setSeleccion(inicial);
+        }
       });
     }
   }, [id]);
+
+  // Agrupa las características de todas las variantes por tipo de opción
+  const gruposOpciones = useMemo(() => {
+    const mapa: Record<number, Set<string>> = {};
+    variantes.forEach((v: any) => {
+      v.caracteristicas?.forEach((c: any) => {
+        if (!mapa[c.id_opcion]) mapa[c.id_opcion] = new Set();
+        mapa[c.id_opcion].add(c.valor);
+      });
+    });
+    return Object.entries(mapa).map(([id_opcion, valores]) => ({
+      id_opcion: Number(id_opcion),
+      nombre: opciones.find((o: any) => o.id_opcion === Number(id_opcion))?.nombre || `Opción ${id_opcion}`,
+      valores: Array.from(valores),
+    }));
+  }, [variantes, opciones]);
+
+  function buscarVariante(sel: Record<number, string>) {
+    return variantes.find((v: any) => {
+      const caracts = v.caracteristicas || [];
+      if (caracts.length !== Object.keys(sel).length) return false;
+      return caracts.every((c: any) => sel[c.id_opcion] === c.valor);
+    });
+  }
+
+  function handleSeleccionarOpcion(id_opcion: number, valor: string) {
+    const nuevaSeleccion = { ...seleccion, [id_opcion]: valor };
+    setSeleccion(nuevaSeleccion);
+    const encontrada = buscarVariante(nuevaSeleccion);
+    setVarianteSeleccionada(encontrada || null);
+    setCantidad(1);
+  }
 
   async function handleAgregarAlCarrito() {
     if (!varianteSeleccionada) return;
@@ -93,36 +135,34 @@ export default function ProductoPage() {
               <p className="text-stone-500 leading-relaxed">{producto.descripcion}</p>
             </div>
 
-            {/* Selector de variantes */}
-            {variantes.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-stone-700 mb-3">Seleccioná una variante:</p>
+            {/* Selectores agrupados por tipo de opción */}
+            {gruposOpciones.map((grupo) => (
+              <div key={grupo.id_opcion}>
+                <p className="text-sm font-medium text-stone-700 mb-3">{grupo.nombre}:</p>
                 <div className="flex flex-wrap gap-2">
-                  {variantes.map((v: any) => (
-                    <button
-                      key={v.id_variante}
-                      type="button"
-                      onClick={() => setVarianteSeleccionada(v)}
-                      className={`px-4 py-2 rounded-lg border text-sm transition-all ${
-                        varianteSeleccionada?.id_variante === v.id_variante
-                          ? 'bg-amber-700 text-white border-amber-700'
-                          : 'bg-white text-stone-700 border-stone-300 hover:border-amber-400'
-                      }`}
-                    >
-                      {v.codigo_sku}
-                      {v.caracteristicas?.length > 0 && (
-                        <span className="ml-1 text-xs opacity-75">
-                          ({v.caracteristicas.map((c: any) => c.valor).join(', ')})
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                  {grupo.valores.map((valor) => {
+                    const isSelected = seleccion[grupo.id_opcion] === valor;
+                    return (
+                      <button
+                        key={valor}
+                        type="button"
+                        onClick={() => handleSeleccionarOpcion(grupo.id_opcion, valor)}
+                        className={`px-4 py-2 rounded-lg border text-sm transition-all ${
+                          isSelected
+                            ? 'bg-amber-700 text-white border-amber-700'
+                            : 'bg-white text-stone-700 border-stone-300 hover:border-amber-400'
+                        }`}
+                      >
+                        {valor}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            )}
+            ))}
 
-            {/* Precio y stock */}
-            {varianteSeleccionada && (
+            {/* Precio y stock, o aviso de combinación no disponible */}
+            {varianteSeleccionada ? (
               <div className="bg-white rounded-xl p-4 border border-stone-200">
                 <div className="flex justify-between items-center">
                   <span className="text-2xl font-semibold text-stone-800">
@@ -134,6 +174,10 @@ export default function ProductoPage() {
                   </div>
                 </div>
               </div>
+            ) : (
+              <p className="text-sm text-stone-500 italic">
+                Esta combinación no está disponible.
+              </p>
             )}
 
             {/* Control de cantidad */}

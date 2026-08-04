@@ -27,6 +27,13 @@ export class VarianteController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('administrador')
+@Patch(':id')
+update(@Param('id') id: string, @Body() body: any) {
+  return this.service.update(+id, body);
+}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id')
   baja(@Param('id') id: string) { return this.service.bajaLogica(+id); }
