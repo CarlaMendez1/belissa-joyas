@@ -18,6 +18,11 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post('google')
+loginConGoogle(@Body() body: { email: string; nombre: string; apellido: string; google_id: string }) {
+  return this.authService.loginConGoogle(body);
+}
+
   // Ruta protegida de prueba
   @UseGuards(JwtAuthGuard)
   @Get('perfil')

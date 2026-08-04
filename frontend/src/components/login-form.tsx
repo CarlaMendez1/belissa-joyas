@@ -47,6 +47,10 @@ async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
   }
 }
 
+async function handleGoogleSignIn() {
+  await signIn('google', { callbackUrl: '/' });
+}
+
   return (
     <Card className="w-full max-w-md border-border/60 shadow-xl shadow-primary/5">
       <CardHeader className="items-center space-y-3 text-center">
@@ -124,11 +128,10 @@ async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
               </button>
             </div>
           </div>
-{error && (
-  <p className="text-sm text-red-500 text-center">{error}</p>
-)}
+          {error && (
+            <p className="text-sm text-red-500 text-center">{error}</p>
+          )}
           <Button type="submit" className="w-full" style={{ backgroundColor: "#574949" }}>
-            
             Iniciar sesión
           </Button>
         </form>
@@ -155,6 +158,7 @@ async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
           type="button"
           variant="outline"
           className="w-full bg-transparent"
+          onClick={handleGoogleSignIn}
         >
           <GoogleIcon className="size-4" />
           Continuar con Google

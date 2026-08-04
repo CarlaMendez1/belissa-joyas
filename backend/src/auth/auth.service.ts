@@ -41,7 +41,23 @@ export class AuthService {
 
     return this.generarToken(usuario);
   }
+async loginConGoogle(datos: { email: string; nombre: string; apellido: string; google_id: string }) {
+  let usuario = await this.usuarioService.findByEmail(datos.email);
 
+  if (!usuario) {
+    usuario = await this.usuarioService.save({
+      nombre: datos.nombre,
+      apellido: datos.apellido,
+      email: datos.email,
+      google_id: datos.google_id,
+      rol: RolUsuario.CLIENTE,
+    });
+  } else if (!usuario.google_id) {
+    usuario = await this.usuarioService.save({ ...usuario, google_id: datos.google_id });
+  }
+
+  return this.generarToken(usuario);
+}
   private generarToken(usuario: any) {
     const payload = {
       sub:   usuario.id_usuario,
@@ -60,3 +76,4 @@ export class AuthService {
     };
   }
 }
+
