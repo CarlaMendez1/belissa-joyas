@@ -17,14 +17,31 @@ export class CarritoService {
     private readonly varianteRepo: Repository<Variante>,
   ) {}
 
-  // Obtener o crear carrito activo del usuario
-  async obtenerCarrito(id_usuario: number): Promise<any> {
+  // Busca el carrito activo del usuario. Si no hay ninguno activo pero sí
+  // uno abandonado (que el cron marcó por inactividad), lo reactiva en vez
+  // de crear uno nuevo vacío, para que el cliente recupere lo que había dejado.
+  // Si no existe ninguno de los dos, crea uno nuevo.
+  private async obtenerOCrearCarritoActivo(id_usuario: number): Promise<Carrito> {
     let carrito = await this.carritoRepo.findOne({
       where: { id_usuario, estado: EstadoCarrito.ACTIVO },
     });
-    if (!carrito) {
-      carrito = await this.carritoRepo.save({ id_usuario });
+    if (carrito) return carrito;
+
+    const carritoAbandonado = await this.carritoRepo.findOne({
+      where: { id_usuario, estado: EstadoCarrito.ABANDONADO },
+      order: { fecha_ultima_act: 'DESC' },
+    });
+    if (carritoAbandonado) {
+      carritoAbandonado.estado = EstadoCarrito.ACTIVO;
+      return this.carritoRepo.save(carritoAbandonado);
     }
+
+    return this.carritoRepo.save({ id_usuario });
+  }
+
+  // Obtener o crear carrito activo del usuario
+  async obtenerCarrito(id_usuario: number): Promise<any> {
+    const carrito = await this.obtenerOCrearCarritoActivo(id_usuario);
     const items = await this.itemRepo.find({
       where: { id_carrito: carrito.id_carrito },
       relations: { variante: true },
@@ -39,10 +56,7 @@ export class CarritoService {
     if (variante.stock_disponible < dto.cantidad)
       throw new BadRequestException('Stock insuficiente');
 
-    let carrito = await this.carritoRepo.findOne({
-      where: { id_usuario, estado: EstadoCarrito.ACTIVO },
-    });
-    if (!carrito) carrito = await this.carritoRepo.save({ id_usuario });
+    const carrito = await this.obtenerOCrearCarritoActivo(id_usuario);
 
     // Si ya existe el ítem, actualizar cantidad
     let item = await this.itemRepo.findOne({
@@ -59,7 +73,6 @@ export class CarritoService {
         precio_unitario: Number(variante.precio_venta),
       });
     }
-
     return this.recalcularSubtotal(carrito.id_carrito, id_usuario);
   }
 
@@ -69,12 +82,10 @@ export class CarritoService {
       where: { id_usuario, estado: EstadoCarrito.ACTIVO },
     });
     if (!carrito) throw new NotFoundException('Carrito no encontrado');
-
     await this.itemRepo.delete({
       id_carrito: carrito.id_carrito,
       id_variante,
     });
-
     return this.recalcularSubtotal(carrito.id_carrito, id_usuario);
   }
 
@@ -89,6 +100,7 @@ export class CarritoService {
     return { mensaje: 'Carrito vaciado', id_carrito: carrito.id_carrito };
   }
 
+  // Recalcular subtotal del carrito
   private async recalcularSubtotal(id_carrito: number, id_usuario: number): Promise<any> {
     const items = await this.itemRepo.find({ where: { id_carrito }, relations: { variante: true } });
     const subtotal = items.reduce((acc, i) => acc + Number(i.precio_unitario) * i.cantidad, 0);

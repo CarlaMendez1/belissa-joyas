@@ -1,7 +1,9 @@
-import { IsString, IsNumber, IsOptional, MaxLength } from 'class-validator';
+import { IsInt, IsString, IsOptional, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CrearProductoDto {
-  @IsNumber()
+  @IsInt()
+  @Type(() => Number)
   id_subcategoria: number;
 
   @IsString()

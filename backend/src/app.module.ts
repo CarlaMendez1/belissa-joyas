@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { UsuarioModule } from './usuario/usuario.module.js';
 import { CategoriaModule } from './categoria/categoria.module.js';
 import { SubcategoriaModule } from './subcategoria/subcategoria.module.js';
@@ -11,11 +12,15 @@ import { OpcionModule } from './opcion/opcion.module.js';
 import { CaracteristicaModule } from './caracteristica/caracteristica.module.js';
 import { CarritoModule } from './carrito/carrito.module.js';
 import { PagoModule } from './pago/pago.module.js';
-
+import { ConfiguracionModule } from './configuracion/configuracion.module.js';
+import { NotificacionModule } from './notificacion/notificacion.module.js';
+import { TareasModule } from './tareas/tareas.module.js';
+import { EmailModule } from './email/email.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -40,7 +45,11 @@ import { PagoModule } from './pago/pago.module.js';
     OpcionModule,
     CaracteristicaModule,
     PagoModule,
-    CarritoModule
+    CarritoModule,
+    ConfiguracionModule,
+    NotificacionModule,
+    TareasModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

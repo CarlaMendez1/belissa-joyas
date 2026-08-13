@@ -41,10 +41,13 @@ async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
   setLoading(false);
 
   if (result?.error) {
-    setError('Email o contraseña incorrectos');
-  } else {
-    router.push('/');
-  }
+  setError('Email o contraseña incorrectos');
+} else {
+  const sessionRes = await fetch('/api/auth/session');
+  const sessionData = await sessionRes.json();
+  const rol = sessionData?.user?.role;
+  router.push(rol === 'administrador' ? '/admin' : '/');
+}
 }
 
 async function handleGoogleSignIn() {

@@ -3,19 +3,20 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, FolderTree, Package, Sliders, Tag, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Package, Sliders, Tag, Settings, ArrowLeft } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/login');
-    } else if (status === 'authenticated' && (session?.user as any)?.role !== 'administrador') {
-      router.replace('/');
-    }
-  }, [status, session, router]);
+  console.log('🔍 DEBUG admin layout:', { status, role: (session?.user as any)?.role, session });
+  if (status === 'unauthenticated') {
+    router.replace('/login');
+  } else if (status === 'authenticated' && (session?.user as any)?.role !== 'administrador') {
+    router.replace('/');
+  }
+}, [status, session, router]);
 
   if (status === 'loading' || (session?.user as any)?.role !== 'administrador') {
     return (
@@ -30,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/categorias', label: 'Categorías', icon: FolderTree },
     { href: '/admin/productos', label: 'Productos', icon: Package },
     { href: '/admin/opciones', label: 'Opciones', icon: Sliders },
-  
+    { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
   ];
 
   return (

@@ -180,3 +180,20 @@ export async function eliminarVariante(token: string, id: number) {
   });
   return manejarRespuesta(res);
 }
+
+// --- Configuración ---
+export async function getConfiguracion(token: string) {
+  const res = await fetch(`${API}/configuracion`, {
+    headers: headers(token),
+  });
+  return manejarRespuesta(res);
+}
+
+export async function actualizarConfiguracion(token: string, clave: string, valor: string) {
+  const res = await fetch(`${API}/configuracion/${clave}`, {
+    method: 'PATCH',
+    headers: headers(token),
+    body: JSON.stringify({ valor }),
+  });
+  return manejarRespuesta(res);
+}
