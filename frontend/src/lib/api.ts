@@ -39,3 +39,13 @@ export async function getSubcategorias() {
   const res = await fetch(`${API}/subcategorias`, { cache: 'no-store' });
   return res.json();
 }
+
+export async function getNivelesVip() {
+  const res = await fetch(`${API}/niveles-vip`, { cache: 'no-store' });
+  return res.json();
+}
+
+export async function getOpcionesPorCategoria(id_categoria: number) {
+  const res = await fetch(`${API}/categorias/${id_categoria}/opciones`, { cache: 'no-store' });
+  return res.json();
+}

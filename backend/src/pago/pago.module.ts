@@ -8,10 +8,13 @@ import { DetalleVenta } from '../venta/detalle-venta.entity.js';
 import { Pago } from './pago.entity.js';
 import { PagoService } from './pago.service.js';
 import { PagoController } from './pago.controller.js';
+import { ClienteVipModule } from '../cliente-vip/cliente-vip.module.js';
+
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Carrito, ItemCarrito, Variante, Venta, DetalleVenta, Pago]),
+     ClienteVipModule,
   ],
   providers: [PagoService],
   controllers: [PagoController],

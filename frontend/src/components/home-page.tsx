@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useCarrito } from '@/context/carrito-context';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useSession, signOut } from 'next-auth/react';
+import { LogOut, LayoutDashboard } from "lucide-react"
 
 type Category = {
   id: string
@@ -19,6 +22,7 @@ type Product = {
   sku: string
   name: string
   description: string
+  imagenes?: string[]
 }
 
 type Subcategory = {
@@ -47,12 +51,13 @@ export default function HomePage({
 }: HomePageProps) {
   const [query, setQuery] = useState("")
   const { setAbierto, totalItems } = useCarrito();
+  const { data: session } = useSession();
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   const filteredProducts = products.filter((p) => {
   const coincideTexto = `${p.name} ${p.description} ${p.sku}`.toLowerCase().includes(query.toLowerCase());
   const coincideSubcat = selectedSubcategory ? p.id === selectedSubcategory : true;
   
-
   return coincideTexto && coincideSubcat;
 });
 
@@ -74,23 +79,76 @@ export default function HomePage({
             </a>
           </div>
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              aria-label="Cuenta de usuario"
-              className="text-stone-600 transition-colors hover:text-stone-900"
-            >
-              <User className="h-5 w-5" />
-            </button>
-          <button onClick={() => setAbierto(true)} className="relative">
-           <ShoppingBag className="h-5 w-5 text-stone-600 hover:text-amber-700" />
-             {totalItems > 0 && (
-             <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-             {totalItems}
-    </span>
-  )}
-</button>
-             
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Cuenta de usuario"
+                onClick={() => setMenuAbierto((v) => !v)}
+                className="text-stone-600 transition-colors hover:text-stone-900"
+              >
+                <User className="h-5 w-5" />
+              </button>
 
+              {menuAbierto && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setMenuAbierto(false)}
+                  />
+                  <div className="absolute right-0 mt-3 w-56 bg-white border border-stone-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                    {session?.user ? (
+                      <>
+                        <div className="px-4 py-3 border-b border-stone-100">
+                          <p className="text-sm font-medium text-stone-800 truncate">
+                            {session.user.name}
+                          </p>
+                          <p className="text-xs text-stone-400 truncate">
+                            {session.user.email}
+                          </p>
+                        </div>
+                        {(session.user as any).role === 'administrador' && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setMenuAbierto(false)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Panel de administración
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => {
+                            setMenuAbierto(false);
+                            signOut({ callbackUrl: '/' });
+                          }}
+                          className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Cerrar sesión
+                        </button>
+                      </>
+                    ) : (
+                      <Link
+                        href="/login"
+                        onClick={() => setMenuAbierto(false)}
+                        className="block px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
+                      >
+                        Iniciar sesión
+                      </Link>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <button onClick={() => setAbierto(true)} className="relative">
+              <ShoppingBag className="h-5 w-5 text-stone-600 hover:text-amber-700" />
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </button>
           </div>
         </nav>
       </header>
@@ -210,9 +268,21 @@ export default function HomePage({
             {filteredProducts.map((product) => (
               <Link key={product.id} href={`/productos/${product.id}`}>
                 <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:border-stone-400 hover:shadow-md cursor-pointer">
-                  <div className="flex h-48 items-center justify-center bg-stone-100">
-                    <Gem className="h-12 w-12 text-stone-500" />
-                  </div>
+                <div className="relative aspect-square bg-stone-100">
+  {product.imagenes?.[0] ? (
+    <Image
+      src={product.imagenes[0]}
+      alt={product.name}
+      fill
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      className="object-cover"
+    />
+  ) : (
+    <div className="flex h-full items-center justify-center">
+      <Gem className="h-12 w-12 text-stone-500" />
+    </div>
+  )}
+</div>
                   <div className="flex flex-col gap-2 p-6">
                     <span className="font-mono text-xs text-stone-500">{product.sku}</span>
                     <h3 className="font-serif text-xl text-stone-800">{product.name}</h3>

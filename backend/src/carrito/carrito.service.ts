@@ -5,6 +5,7 @@ import { Carrito, EstadoCarrito } from './carrito.entity.js';
 import { ItemCarrito } from '../item-carrito/item-carrito.entity.js';
 import { Variante } from '../variante/variante.entity.js';
 import { AgregarItemDto } from './dto/agregar-item.dto.js';
+import { ClienteVipService } from '../cliente-vip/cliente-vip.service.js';
 
 @Injectable()
 export class CarritoService {
@@ -15,12 +16,9 @@ export class CarritoService {
     private readonly itemRepo: Repository<ItemCarrito>,
     @InjectRepository(Variante)
     private readonly varianteRepo: Repository<Variante>,
+    private readonly clienteVipService: ClienteVipService,
   ) {}
 
-  // Busca el carrito activo del usuario. Si no hay ninguno activo pero sí
-  // uno abandonado (que el cron marcó por inactividad), lo reactiva en vez
-  // de crear uno nuevo vacío, para que el cliente recupere lo que había dejado.
-  // Si no existe ninguno de los dos, crea uno nuevo.
   private async obtenerOCrearCarritoActivo(id_usuario: number): Promise<Carrito> {
     let carrito = await this.carritoRepo.findOne({
       where: { id_usuario, estado: EstadoCarrito.ACTIVO },
@@ -39,17 +37,35 @@ export class CarritoService {
     return this.carritoRepo.save({ id_usuario });
   }
 
-  // Obtener o crear carrito activo del usuario
-  async obtenerCarrito(id_usuario: number): Promise<any> {
-    const carrito = await this.obtenerOCrearCarritoActivo(id_usuario);
+  // Arma la respuesta del carrito incluyendo el descuento VIP, sin modificar
+  // lo que se guarda en la base (precio_subtotal sigue siendo el bruto).
+  private async armarRespuesta(carrito: Carrito, id_usuario: number) {
     const items = await this.itemRepo.find({
       where: { id_carrito: carrito.id_carrito },
       relations: { variante: true },
     });
-    return { ...carrito, items };
+
+    const clienteVip = await this.clienteVipService.obtenerPorUsuario(id_usuario);
+    const porcentaje_descuento = clienteVip ? Number(clienteVip.nivel.porcentaje_descuento) : 0;
+    const subtotal = Number(carrito.precio_subtotal);
+    const monto_descuento = Math.round(subtotal * (porcentaje_descuento / 100) * 100) / 100;
+    const total_con_descuento = subtotal - monto_descuento;
+
+    return {
+      ...carrito,
+      items,
+      nivel_vip: clienteVip?.nivel?.nombre_nivel || null,
+      porcentaje_descuento,
+      monto_descuento,
+      total_con_descuento,
+    };
   }
 
-  // Agregar o actualizar ítem en el carrito — RF31
+  async obtenerCarrito(id_usuario: number): Promise<any> {
+    const carrito = await this.obtenerOCrearCarritoActivo(id_usuario);
+    return this.armarRespuesta(carrito, id_usuario);
+  }
+
   async agregarItem(id_usuario: number, dto: AgregarItemDto): Promise<any> {
     const variante = await this.varianteRepo.findOneBy({ id_variante: dto.id_variante });
     if (!variante) throw new NotFoundException('Variante no encontrada');
@@ -58,7 +74,6 @@ export class CarritoService {
 
     const carrito = await this.obtenerOCrearCarritoActivo(id_usuario);
 
-    // Si ya existe el ítem, actualizar cantidad
     let item = await this.itemRepo.findOne({
       where: { id_carrito: carrito.id_carrito, id_variante: dto.id_variante },
     });
@@ -76,7 +91,6 @@ export class CarritoService {
     return this.recalcularSubtotal(carrito.id_carrito, id_usuario);
   }
 
-  // Eliminar ítem del carrito — RF32
   async eliminarItem(id_usuario: number, id_variante: number): Promise<any> {
     const carrito = await this.carritoRepo.findOne({
       where: { id_usuario, estado: EstadoCarrito.ACTIVO },
@@ -89,7 +103,6 @@ export class CarritoService {
     return this.recalcularSubtotal(carrito.id_carrito, id_usuario);
   }
 
-  // Vaciar carrito
   async vaciarCarrito(id_usuario: number): Promise<any> {
     const carrito = await this.carritoRepo.findOne({
       where: { id_usuario, estado: EstadoCarrito.ACTIVO },
@@ -100,12 +113,12 @@ export class CarritoService {
     return { mensaje: 'Carrito vaciado', id_carrito: carrito.id_carrito };
   }
 
-  // Recalcular subtotal del carrito
   private async recalcularSubtotal(id_carrito: number, id_usuario: number): Promise<any> {
     const items = await this.itemRepo.find({ where: { id_carrito }, relations: { variante: true } });
     const subtotal = items.reduce((acc, i) => acc + Number(i.precio_unitario) * i.cantidad, 0);
     await this.carritoRepo.update(id_carrito, { precio_subtotal: subtotal });
     const carrito = await this.carritoRepo.findOneBy({ id_carrito });
-    return { ...carrito, items };
+    if (!carrito) throw new NotFoundException('Carrito no encontrado');
+    return this.armarRespuesta(carrito, id_usuario);
   }
 }

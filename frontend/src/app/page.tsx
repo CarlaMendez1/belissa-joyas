@@ -55,6 +55,7 @@ const prods = productos
     sku: p.codigo_sku,
     name: p.nombre,
     description: p.descripcion || '',
+    imagenes: p.imagenes || [],
   }));
 
 

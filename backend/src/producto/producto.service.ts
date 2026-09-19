@@ -27,8 +27,25 @@ export class ProductoService {
     return this.repo.save({ ...dto, codigo_sku: sku });
   }
 
-  async update(id: number, data: Partial<Producto>): Promise<Producto> {
+  async update(id: number, data: Partial<CrearProductoDto>): Promise<Producto> {
     await this.repo.update(id, data);
+    return this.findById(id);
+  }
+
+  // Agrega una URL de imagen al array existente del producto (jsonb).
+  async agregarImagen(id: number, url: string): Promise<Producto> {
+    const producto = await this.findById(id);
+    const imagenesActuales = producto.imagenes || [];
+    const imagenesNuevas = [...imagenesActuales, url];
+    await this.repo.update(id, { imagenes: imagenesNuevas });
+    return this.findById(id);
+  }
+
+  async eliminarImagen(id: number, url: string): Promise<Producto> {
+    const producto = await this.findById(id);
+    const imagenesActuales = producto.imagenes || [];
+    const imagenesNuevas = imagenesActuales.filter((img) => img !== url);
+    await this.repo.update(id, { imagenes: imagenesNuevas });
     return this.findById(id);
   }
 

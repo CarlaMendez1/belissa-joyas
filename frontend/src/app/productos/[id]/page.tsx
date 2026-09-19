@@ -22,7 +22,7 @@ export default function ProductoPage() {
   const [agregando, setAgregando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [requiereLogin, setRequiereLogin] = useState(false);
-
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
   useEffect(() => {
     if (id) {
       getProducto(Number(id)).then(setProducto);
@@ -41,7 +41,6 @@ export default function ProductoPage() {
     }
   }, [id]);
 
-  // Agrupa las características de todas las variantes por tipo de opción
   const gruposOpciones = useMemo(() => {
     const mapa: Record<number, Set<string>> = {};
     variantes.forEach((v: any) => {
@@ -105,6 +104,9 @@ export default function ProductoPage() {
     </div>
   );
 
+const imagenes: string[] = producto.imagenes || [];
+const imagenPrincipal = imagenes[imagenSeleccionada];
+
   return (
     <div className="min-h-screen bg-stone-50">
 
@@ -122,10 +124,33 @@ export default function ProductoPage() {
       <div className="max-w-5xl mx-auto px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
-          {/* Imagen del producto */}
-          <div className="bg-gradient-to-br from-stone-100 to-amber-50 rounded-2xl flex items-center justify-center h-96">
-            <Gem className="w-24 h-24 text-amber-600 opacity-60" />
-          </div>
+          {/* Imagen del producto + galería */}
+<div className="flex flex-col gap-3">
+  <div className="bg-gradient-to-br from-stone-100 to-amber-50 rounded-2xl flex items-center justify-center h-96 overflow-hidden">
+    {imagenPrincipal ? (
+      <img src={imagenPrincipal} alt={producto.nombre} className="w-full h-full object-cover" />
+    ) : (
+      <Gem className="w-24 h-24 text-amber-600 opacity-60" />
+    )}
+  </div>
+
+  {imagenes.length > 1 && (
+    <div className="flex gap-2">
+      {imagenes.map((url, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => setImagenSeleccionada(i)}
+          className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
+            i === imagenSeleccionada ? 'border-amber-700' : 'border-transparent hover:border-stone-300'
+          }`}
+        >
+          <img src={url} alt={`${producto.nombre} - miniatura ${i + 1}`} className="w-full h-full object-cover" />
+        </button>
+      ))}
+    </div>
+  )}
+</div>
 
           {/* Info del producto */}
           <div className="flex flex-col gap-6">

@@ -197,3 +197,53 @@ export async function actualizarConfiguracion(token: string, clave: string, valo
   });
   return manejarRespuesta(res);
 }
+
+// --- Niveles VIP ---
+export async function actualizarNivelVip(token: string, id: number, dto: {
+  monto_min_requerido?: number;
+  cantidad_compras_min_requerida?: number;
+  porcentaje_descuento?: number;
+  beneficios?: string;
+}) {
+  const res = await fetch(`${API}/niveles-vip/${id}`, {
+    method: 'PATCH',
+    headers: headers(token),
+    body: JSON.stringify(dto),
+  });
+  return manejarRespuesta(res);
+}
+
+// --- Imágenes de producto ---
+export async function subirImagenProducto(token: string, id_producto: number, archivo: File) {
+  const formData = new FormData();
+  formData.append('imagen', archivo);
+
+  const res = await fetch(`${API}/productos/${id_producto}/imagen`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }, // ojo: NO poner Content-Type acá, el navegador lo arma solo con el boundary correcto para FormData
+    body: formData,
+  });
+  return manejarRespuesta(res);
+}
+
+// --- Imágenes de variante ---
+export async function subirImagenVariante(token: string, id_variante: number, archivo: File) {
+  const formData = new FormData();
+  formData.append('imagen', archivo);
+
+  const res = await fetch(`${API}/variantes/${id_variante}/imagen`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  return manejarRespuesta(res);
+}
+
+export async function eliminarImagenProducto(token: string, id_producto: number, url: string) {
+  const res = await fetch(`${API}/productos/${id_producto}/imagen`, {
+    method: 'DELETE',
+    headers: headers(token),
+    body: JSON.stringify({ url }),
+  });
+  return manejarRespuesta(res);
+}

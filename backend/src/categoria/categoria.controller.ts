@@ -13,19 +13,21 @@ import { Roles } from '../auth/roles.decorator.js';
 export class CategoriaController {
   constructor(private readonly service: CategoriaService) {}
 
-  // Pública — cualquiera puede ver el catálogo (RF22)
   @Get()
   findAll() {
     return this.service.findAll();
   }
 
-  // Pública — ver una categoría con sus subcategorías
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findById(+id);
   }
 
-  // Protegida — solo administradores (RF5)
+  @Get(':id/opciones')
+  obtenerOpciones(@Param('id') id: string) {
+    return this.service.obtenerOpcionesPorCategoria(+id);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Post()
@@ -33,7 +35,6 @@ export class CategoriaController {
     return this.service.create(dto);
   }
 
-  // Protegida — solo administradores (RF6)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Patch(':id')
@@ -41,7 +42,6 @@ export class CategoriaController {
     return this.service.update(+id, dto);
   }
 
-  // Protegida — baja lógica, solo administradores (RF7)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id')

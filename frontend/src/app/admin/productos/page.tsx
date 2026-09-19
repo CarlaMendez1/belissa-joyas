@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getProductos, getSubcategorias } from '@/lib/api';
 import { crearProducto, eliminarProducto } from '@/lib/admin-api';
@@ -9,9 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/confirm-dialog';
 
-export default function AdminProductosPage() {
+export default function AdminProductosListaPage() {
   const { data: session } = useSession();
   const token = (session as any)?.access_token;
+  const router = useRouter();
 
   const [productos, setProductos] = useState<any[]>([]);
   const [subcategorias, setSubcategorias] = useState<any[]>([]);
@@ -58,17 +60,17 @@ export default function AdminProductosPage() {
     setGuardando(true);
     setError('');
     try {
-      await crearProducto(token, {
+      const nuevoProducto = await crearProducto(token, {
         nombre,
         descripcion,
         id_subcategoria: Number(idSubcategoria),
       });
-      await cargar();
       setMostrarForm(false);
+      router.push(`/admin/productos/${nuevoProducto.id_producto}`);
     } catch (err: any) {
       setError(err.message || 'Error al crear el producto');
+      setGuardando(false);
     }
-    setGuardando(false);
   }
 
   function pedirEliminar(producto: any) {
@@ -137,7 +139,7 @@ export default function AdminProductosPage() {
                 disabled={guardando}
                 className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
               >
-                {guardando ? 'Guardando...' : 'Guardar'}
+                {guardando ? 'Creando...' : 'Guardar'}
               </Button>
               <Button onClick={() => setMostrarForm(false)} variant="outline" className="rounded-full">
                 Cancelar

@@ -17,7 +17,16 @@ export class VarianteController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Post()
-  create(@Body() dto: CrearVarianteDto) { return this.service.create(dto); }
+  create(@Body() dto: CrearVarianteDto) {
+    return this.service.create(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrador')
+  @Post(':id/imagen')
+  agregarImagen(@Param('id') id: string, @Body('url') url: string) {
+    return this.service.agregarImagen(+id, url);
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
@@ -27,14 +36,16 @@ export class VarianteController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('administrador')
-@Patch(':id')
-update(@Param('id') id: string, @Body() body: any) {
-  return this.service.update(+id, body);
-}
+  @Roles('administrador')
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: Partial<CrearVarianteDto>) {
+    return this.service.update(+id, dto);
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id')
-  baja(@Param('id') id: string) { return this.service.bajaLogica(+id); }
+  baja(@Param('id') id: string) {
+    return this.service.bajaLogica(+id);
+  }
 }

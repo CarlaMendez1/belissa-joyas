@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { Gem, User, Mail, Lock, Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -15,14 +17,21 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 export default function RegistroForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cargando, setCargando] = useState(false)
+  const router = useRouter()
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
+    const nombre = String(formData.get("nombre") ?? "")
+    const apellido = String(formData.get("apellido") ?? "")
+    const email = String(formData.get("email") ?? "")
     const password = String(formData.get("password") ?? "")
     const confirmPassword = String(formData.get("confirmPassword") ?? "")
 
@@ -36,12 +45,44 @@ export default function RegistroForm() {
     }
 
     setError(null)
-    console.log("[v0] Registro submit:", {
-      nombre: formData.get("nombre"),
-      apellido: formData.get("apellido"),
-      email: formData.get("email"),
-      password,
-    })
+    setCargando(true)
+
+    try {
+      const res = await fetch(`${API}/auth/registro`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, apellido, email, password }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        if (res.status === 409) {
+          setError('Ese email ya está registrado.')
+        } else {
+          setError(data?.message || 'No se pudo completar el registro.')
+        }
+        setCargando(false)
+        return
+      }
+
+      // Registro exitoso — iniciamos sesión automáticamente con las mismas credenciales
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        // El registro anduvo bien pero el auto-login falló; mandamos al login normal
+        router.push('/login')
+        return
+      }
+
+      router.push('/')
+    } catch {
+      setError('No se pudo conectar con el servidor. Intentá de nuevo.')
+      setCargando(false)
+    }
   }
 
   return (
@@ -200,17 +241,18 @@ export default function RegistroForm() {
 
           <Button
             type="submit"
+            disabled={cargando}
             className="w-full"
             style={{ backgroundColor: "#574949" }}
           >
-            Registrarse
+            {cargando ? 'Creando cuenta...' : 'Registrarse'}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
           {"¿Ya tenés cuenta? "}
           <a
-            href="#"
+            href="/login"
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
             Iniciá sesión

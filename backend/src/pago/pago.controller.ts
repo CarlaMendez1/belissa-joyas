@@ -14,8 +14,10 @@ export class PagoController {
 
   // Sin guard: Mercado Pago llama a este endpoint directamente, sin JWT
   @Post('webhook')
-  @Get('webhook')
   webhook(@Query() query: any, @Body() body: any) {
+    console.log('====== WEBHOOK ENTRANTE ======');
+    console.log('Query recibido:', query);
+    console.log('Body recibido:', body);
     return this.service.procesarWebhook(query, body);
   }
 }

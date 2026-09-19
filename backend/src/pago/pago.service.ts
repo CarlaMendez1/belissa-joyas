@@ -9,6 +9,7 @@ import { Variante } from '../variante/variante.entity.js';
 import { Venta, EstadoCompra } from '../venta/venta.entity.js';
 import { DetalleVenta } from '../venta/detalle-venta.entity.js';
 import { Pago, EstadoPago } from './pago.entity.js';
+import { ClienteVipService } from '../cliente-vip/cliente-vip.service.js';
 
 @Injectable()
 export class PagoService {
@@ -21,6 +22,7 @@ export class PagoService {
     @InjectRepository(Venta) private readonly ventaRepo: Repository<Venta>,
     @InjectRepository(DetalleVenta) private readonly detalleRepo: Repository<DetalleVenta>,
     @InjectRepository(Pago) private readonly pagoRepo: Repository<Pago>,
+    private readonly clienteVipService: ClienteVipService,
     private readonly configService: ConfigService,
   ) {
     this.client = new MercadoPagoConfig({
@@ -28,75 +30,91 @@ export class PagoService {
     });
   }
 
-  async crearPreferencia(id_usuario: number) {
-    const carrito = await this.carritoRepo.findOne({
-      where: { id_usuario, estado: EstadoCarrito.ACTIVO },
-    });
-    if (!carrito) throw new NotFoundException('No hay un carrito activo');
+ async crearPreferencia(id_usuario: number) {
+  const carrito = await this.carritoRepo.findOne({
+    where: { id_usuario, estado: EstadoCarrito.ACTIVO },
+  });
+  if (!carrito) throw new NotFoundException('No hay un carrito activo');
 
-    const items = await this.itemRepo.find({
-      where: { id_carrito: carrito.id_carrito },
-      relations: { variante: { producto: true } },
-    });
-    if (items.length === 0) throw new BadRequestException('El carrito está vacío');
+  const items = await this.itemRepo.find({
+    where: { id_carrito: carrito.id_carrito },
+    relations: { variante: { producto: true } },
+  });
+  if (items.length === 0) throw new BadRequestException('El carrito está vacío');
 
-    // 1. Crear la venta en estado pendiente
-    const venta = await this.ventaRepo.save({
-      id_usuario,
-      id_carrito: carrito.id_carrito,
-      precio_total: carrito.precio_subtotal,
-      estado_compra: EstadoCompra.PENDIENTE,
-      metodo_pago: 'mercadopago',
-    });
+  // Descuento VIP: si el usuario tiene nivel asignado, se aplica el
+  // porcentaje uniformemente a cada ítem, para que el total de Mercado Pago
+  // coincida exactamente con lo que se muestra en el carrito.
+  const clienteVip = await this.clienteVipService.obtenerPorUsuario(id_usuario);
+  const porcentajeDescuento = clienteVip ? Number(clienteVip.nivel.porcentaje_descuento) : 0;
+  const factor = 1 - porcentajeDescuento / 100;
 
-    // 2. Crear el detalle de venta (snapshot de lo comprado)
-    for (const item of items) {
-      await this.detalleRepo.save({
-        id_venta: venta.id_venta,
-        id_variante: item.id_variante,
-        sku_snapshot: item.variante.codigo_sku,
-        cantidad: item.cantidad,
-        precio_unitario: item.precio_unitario,
-      });
-    }
+  const itemsConDescuento = items.map((item) => ({
+    ...item,
+    precio_con_descuento: Math.round(Number(item.precio_unitario) * factor * 100) / 100,
+  }));
 
-    // 3. Crear la preferencia en Mercado Pago
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-    const backendUrl = this.configService.get<string>('BACKEND_PUBLIC_URL');
+  const precioTotalConDescuento = itemsConDescuento.reduce(
+    (acc, i) => acc + i.precio_con_descuento * i.cantidad,
+    0,
+  );
 
-    const preference = new Preference(this.client);
-    const resultado = await preference.create({
-      body: {
-        items: items.map((item) => ({
-          id: String(item.id_variante),
-          title: item.variante.producto?.nombre || item.variante.codigo_sku,
-          quantity: item.cantidad,
-          unit_price: Number(item.precio_unitario),
-          currency_id: 'ARS',
-        })),
-        external_reference: String(venta.id_venta),
-        back_urls: {
-          success: `${frontendUrl}/pago/exito`,
-          failure: `${frontendUrl}/pago/error`,
-          pending: `${frontendUrl}/pago/pendiente`,
-        },
+  // 1. Crear la venta en estado pendiente, ya con el total descontado
+  const venta = await this.ventaRepo.save({
+    id_usuario,
+    id_carrito: carrito.id_carrito,
+    precio_total: precioTotalConDescuento,
+    estado_compra: EstadoCompra.PENDIENTE,
+    metodo_pago: 'mercadopago',
+  });
 
-        notification_url: `${backendUrl}/pago/webhook`,
-      },
-    });
-
-    // 4. Guardar el registro de pago en estado pendiente
-    await this.pagoRepo.save({
+  // 2. Crear el detalle de venta (snapshot de lo comprado, con el precio ya descontado)
+  for (const item of itemsConDescuento) {
+    await this.detalleRepo.save({
       id_venta: venta.id_venta,
-      id_preferencia_mp: resultado.id!,
-      estado_pago: EstadoPago.PENDIENTE,
-      monto_abonado: venta.precio_total,
+      id_variante: item.id_variante,
+      sku_snapshot: item.variante.codigo_sku,
+      cantidad: item.cantidad,
+      precio_unitario: item.precio_con_descuento,
     });
-
-    return { init_point: resultado.init_point, id_venta: venta.id_venta };
   }
 
-  async procesarWebhook(query: any, body: any) {
+  // 3. Crear la preferencia en Mercado Pago, con los precios ya descontados
+  const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+  const backendUrl = this.configService.get<string>('BACKEND_PUBLIC_URL');
+
+  const preference = new Preference(this.client);
+  const resultado = await preference.create({
+    body: {
+      items: itemsConDescuento.map((item) => ({
+        id: String(item.id_variante),
+        title: item.variante.producto?.nombre || item.variante.codigo_sku,
+        quantity: item.cantidad,
+        unit_price: item.precio_con_descuento,
+        currency_id: 'ARS',
+      })),
+      external_reference: String(venta.id_venta),
+      back_urls: {
+        success: `${frontendUrl}/pago/exito`,
+        failure: `${frontendUrl}/pago/error`,
+        pending: `${frontendUrl}/pago/pendiente`,
+      },
+            notification_url: this.configService.get<string>('NOTIFICATION_URL') || `${backendUrl}/pago/webhook`,
+    },
+  });
+
+  // 4. Guardar el registro de pago en estado pendiente
+  await this.pagoRepo.save({
+    id_venta: venta.id_venta,
+    id_preferencia_mp: resultado.id!,
+    estado_pago: EstadoPago.PENDIENTE,
+    monto_abonado: venta.precio_total,
+  });
+
+  return { init_point: resultado.init_point, id_venta: venta.id_venta };
+}
+
+async procesarWebhook(query: any, body: any) {
   const paymentId = query?.['data.id'] || body?.data?.id || query?.id;
   const type = query?.type || body?.type || query?.topic;
 
@@ -105,10 +123,15 @@ export class PagoService {
   }
 
   const paymentClient = new Payment(this.client);
-  const pagoMP = await paymentClient.get({ id: paymentId });
+  let pagoMP;
+  try {
+    pagoMP = await paymentClient.get({ id: paymentId });
+  } catch (error) {
+    console.log('[WEBHOOK] No se pudo obtener el pago en Mercado Pago (probablemente un ID de prueba):', paymentId);
+    return { recibido: true };
+  }
 
   const id_venta = Number(pagoMP.external_reference);
-  if (!id_venta) return { recibido: true };
 
   const estadoMap: Record<string, EstadoPago> = {
     approved: EstadoPago.APROBADO,
@@ -143,28 +166,42 @@ export class PagoService {
   }
 
   if (nuevoEstado === EstadoPago.APROBADO) {
-    await this.ventaRepo.update(id_venta, { estado_compra: EstadoCompra.CONFIRMADA });
+  await this.ventaRepo.update(id_venta, { estado_compra: EstadoCompra.CONFIRMADA });
 
-    const venta = await this.ventaRepo.findOneBy({ id_venta });
-    const detalles = await this.detalleRepo.find({ where: { id_venta } });
+  const venta = await this.ventaRepo.findOneBy({ id_venta });
+  console.log('[WEBHOOK] venta:', venta);
 
-    for (const detalle of detalles) {
-      await this.varianteRepo.decrement(
-        { id_variante: detalle.id_variante },
-        'stock_disponible',
-        detalle.cantidad,
-      );
+  const detalles = await this.detalleRepo.find({ where: { id_venta } });
+
+  for (const detalle of detalles) {
+    await this.varianteRepo.decrement(
+      { id_variante: detalle.id_variante },
+      'stock_disponible',
+      detalle.cantidad,
+    );
+  }
+  console.log('[WEBHOOK] stock descontado OK, pasando a actualizar carrito');
+
+  if (venta?.id_carrito) {
+    const r = await this.carritoRepo.update(venta.id_carrito, {
+      estado: EstadoCarrito.CONVERTIDO,
+    });
+    console.log('[WEBHOOK] update carrito resultado:', r);
+  } else {
+    console.log('[WEBHOOK] ⚠️ no se actualiza carrito, id_carrito falsy:', venta?.id_carrito);
+  }
+
+  if (venta?.id_usuario) {
+    try {
+      await this.clienteVipService.recalcularNivel(venta.id_usuario);
+    } catch (e) {
+      console.error('[WEBHOOK] error en recalcularNivel:', e);
     }
-
-    if (venta?.id_carrito) {
-      await this.carritoRepo.update(venta.id_carrito, {
-        estado: EstadoCarrito.CONVERTIDO,
-      });
-    }
+  }
   } else if (nuevoEstado === EstadoPago.RECHAZADO) {
     await this.ventaRepo.update(id_venta, { estado_compra: EstadoCompra.CANCELADA });
   }
 
-  return { recibido: true };
-}
+    return { recibido: true };
+  }
 }

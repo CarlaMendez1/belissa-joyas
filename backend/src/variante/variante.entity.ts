@@ -21,6 +21,9 @@ export class Variante {
   @Column({ default: 0 })
   stock_disponible: number;
 
+  @Column({ type: 'jsonb', nullable: true })
+  imagenes: string[];
+
   @Column({ type: 'enum', enum: EstadoVariante, default: EstadoVariante.ACTIVA })
   estado: EstadoVariante;
 

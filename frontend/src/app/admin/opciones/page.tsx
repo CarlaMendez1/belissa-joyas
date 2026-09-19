@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { getOpciones, getCaracteristicasPorOpcion } from '@/lib/api';
+import { getOpciones, getCaracteristicasPorOpcion, getCategorias } from '@/lib/api';
 import {
   crearOpcion, actualizarOpcion, eliminarOpcion,
   crearCaracteristica, actualizarCaracteristica, eliminarCaracteristica,
@@ -16,12 +16,14 @@ export default function AdminOpcionesPage() {
   const token = (session as any)?.access_token;
 
   const [opciones, setOpciones] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [editando, setEditando] = useState<any>(null);
   const [nombre, setNombre] = useState('');
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<number[]>([]);
   const [guardando, setGuardando] = useState(false);
 
   const [expandida, setExpandida] = useState<number | null>(null);
@@ -34,11 +36,11 @@ export default function AdminOpcionesPage() {
   const [confirmando, setConfirmando] = useState<
     { tipo: 'opcion'; item: any } | { tipo: 'caracteristica'; id_opcion: number; item: any } | null
   >(null);
-
   async function cargar() {
     setCargando(true);
-    const data = await getOpciones();
-    setOpciones(data);
+    const [ops, cats] = await Promise.all([getOpciones(), getCategorias()]);
+    setOpciones(ops);
+    setCategorias(cats);
     setCargando(false);
   }
 
@@ -49,6 +51,7 @@ export default function AdminOpcionesPage() {
   function abrirCrear() {
     setEditando(null);
     setNombre('');
+    setCategoriasSeleccionadas([]);
     setError('');
     setMostrarForm(true);
   }
@@ -56,6 +59,7 @@ export default function AdminOpcionesPage() {
   function abrirEditar(opcion: any) {
     setEditando(opcion);
     setNombre(opcion.nombre);
+    setCategoriasSeleccionadas((opcion.categorias || []).map((c: any) => c.id_categoria));
     setError('');
     setMostrarForm(true);
   }
@@ -63,6 +67,14 @@ export default function AdminOpcionesPage() {
   function cerrarForm() {
     setMostrarForm(false);
     setEditando(null);
+  }
+
+  function toggleCategoria(id_categoria: number) {
+    setCategoriasSeleccionadas((prev) =>
+      prev.includes(id_categoria)
+        ? prev.filter((c) => c !== id_categoria)
+        : [...prev, id_categoria]
+    );
   }
 
   async function handleGuardar() {
@@ -74,9 +86,9 @@ export default function AdminOpcionesPage() {
     setError('');
     try {
       if (editando) {
-        await actualizarOpcion(token, editando.id_opcion, { nombre });
+        await actualizarOpcion(token, editando.id_opcion, { nombre, categorias: categoriasSeleccionadas });
       } else {
-        await crearOpcion(token, { nombre });
+        await crearOpcion(token, { nombre, categorias: categoriasSeleccionadas });
       }
       await cargar();
       cerrarForm();
@@ -175,7 +187,8 @@ export default function AdminOpcionesPage() {
 
       <p className="text-sm text-stone-500 mb-6">
         Las opciones son los tipos de variación de un producto (ej. Material, Talle). Cada opción tiene
-        sus propios valores posibles, llamados características (ej. "Oro 18k", "16").
+        sus propios valores posibles, llamados características (ej. "Oro 18k", "16"), y aplica solo a
+        las categorías que elijas.
       </p>
 
       {mostrarForm && (
@@ -193,6 +206,34 @@ export default function AdminOpcionesPage() {
               <label className="text-sm text-stone-600 mb-1 block">Nombre</label>
               <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Material" />
             </div>
+
+            <div>
+              <label className="text-sm text-stone-600 mb-2 block">Categorías donde aplica</label>
+              {categorias.length === 0 ? (
+                <p className="text-xs text-stone-400">No hay categorías cargadas todavía.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {categorias.map((cat: any) => {
+                    const seleccionada = categoriasSeleccionadas.includes(cat.id_categoria);
+                    return (
+                      <button
+                        key={cat.id_categoria}
+                        type="button"
+                        onClick={() => toggleCategoria(cat.id_categoria)}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                          seleccionada
+                            ? 'bg-amber-700 text-white border-amber-700'
+                            : 'bg-white text-stone-600 border-stone-300 hover:border-amber-400'
+                        }`}
+                      >
+                        {cat.nombre}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex gap-2 mt-2">
               <Button
@@ -228,7 +269,23 @@ export default function AdminOpcionesPage() {
                   ) : (
                     <ChevronRight className="w-4 h-4 text-stone-400" />
                   )}
-                  <span className="text-stone-800 font-medium">{op.nombre}</span>
+                  <div>
+                    <span className="text-stone-800 font-medium">{op.nombre}</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {(op.categorias || []).length === 0 ? (
+                        <span className="text-xs text-stone-400 italic">Sin categorías asignadas</span>
+                      ) : (
+                        op.categorias.map((c: any) => (
+                          <span
+                            key={c.id_categoria}
+                            className="text-xs bg-stone-100 text-stone-600 rounded-full px-2 py-0.5"
+                          >
+                            {c.nombre}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </button>
                 <div className="flex gap-2">
                   <button onClick={() => abrirEditar(op)} className="text-stone-400 hover:text-amber-700">

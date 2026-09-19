@@ -3,11 +3,10 @@
 import type React from "react"
 import { useState } from "react"
 import { Gem, Mail, Lock, Eye, EyeOff } from "lucide-react"
-
+import { signIn, getSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -21,7 +20,7 @@ export default function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false)
 
- const [error, setError] = useState<string>('');
+const [error, setError] = useState<string>('');
 const [loading, setLoading] = useState(false);
 const router = useRouter();
 
@@ -40,13 +39,13 @@ async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 
   setLoading(false);
 
-  if (result?.error) {
+ if (result?.error) {
   setError('Email o contraseña incorrectos');
 } else {
-  const sessionRes = await fetch('/api/auth/session');
-  const sessionData = await sessionRes.json();
-  const rol = sessionData?.user?.role;
+  const session = await getSession();
+  const rol = (session?.user as any)?.role;
   router.push(rol === 'administrador' ? '/admin' : '/');
+  router.refresh();
 }
 }
 
@@ -134,15 +133,20 @@ async function handleGoogleSignIn() {
           {error && (
             <p className="text-sm text-red-500 text-center">{error}</p>
           )}
-          <Button type="submit" className="w-full" style={{ backgroundColor: "#574949" }}>
-            Iniciar sesión
+          <Button
+            type="submit"
+            className="w-full"
+            style={{ backgroundColor: "#574949" }}
+            disabled={loading}
+          >
+            {loading ? "Iniciando sesión..." : "Iniciar sesión"}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
           {"¿No tenés cuenta? "}
           <a
-            href="#"
+            href="/registro"
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
             Registrate

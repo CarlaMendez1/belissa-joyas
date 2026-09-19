@@ -2,12 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Categoria, EstadoGeneral } from './categoria.entity.js';
+import { Opcion } from '../opcion/opcion.entity.js';
 
 @Injectable()
 export class CategoriaService {
   constructor(
     @InjectRepository(Categoria)
     private readonly repo: Repository<Categoria>,
+    @InjectRepository(Opcion)
+    private readonly opcionRepo: Repository<Opcion>,
   ) {}
 
   findAll(): Promise<Categoria[]> {
@@ -36,5 +39,16 @@ export class CategoriaService {
   async bajaLogica(id: number): Promise<Categoria> {
     await this.repo.update(id, { estado: EstadoGeneral.INACTIVA });
     return this.findById(id);
+  }
+
+  // Nuevo: devuelve las opciones habilitadas para una categoría,
+  // usando la tabla intermedia categoria_opcion.
+  async obtenerOpcionesPorCategoria(id_categoria: number): Promise<Opcion[]> {
+    await this.findById(id_categoria); // valida que la categoría exista
+
+    return this.opcionRepo
+      .createQueryBuilder('opcion')
+      .innerJoin('opcion.categorias', 'categoria', 'categoria.id_categoria = :id_categoria', { id_categoria })
+      .getMany();
   }
 }

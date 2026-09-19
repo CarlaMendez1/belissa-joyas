@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { getProducto, getVariantesPorProducto, getSubcategorias, getOpciones, getCaracteristicasPorOpcion } from '@/lib/api';
+import { getProducto, getVariantesPorProducto, getSubcategorias, getOpciones, getOpcionesPorCategoria, getCaracteristicasPorOpcion } from '@/lib/api';
 import {
   actualizarProducto, crearVariante, actualizarVariante, eliminarVariante,
+  subirImagenProducto, subirImagenVariante,
 } from '@/lib/admin-api';
-import { ArrowLeft, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, X, Upload, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/confirm-dialog';
@@ -21,10 +22,10 @@ export default function AdminProductoDetallePage() {
   const [variantes, setVariantes] = useState<any[]>([]);
   const [subcategorias, setSubcategorias] = useState<any[]>([]);
   const [opciones, setOpciones] = useState<any[]>([]);
+  const [opcionesDelProducto, setOpcionesDelProducto] = useState<any[]>([]);
   const [caractsPorOpcion, setCaractsPorOpcion] = useState<Record<number, any[]>>({});
   const [cargando, setCargando] = useState(true);
 
-  // Edición de datos básicos
   const [editandoProducto, setEditandoProducto] = useState(false);
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -32,7 +33,9 @@ export default function AdminProductoDetallePage() {
   const [guardandoProducto, setGuardandoProducto] = useState(false);
   const [errorProducto, setErrorProducto] = useState('');
 
-  // Form de variante
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [errorImagen, setErrorImagen] = useState('');
+
   const [mostrarFormVar, setMostrarFormVar] = useState(false);
   const [editandoVar, setEditandoVar] = useState<any>(null);
   const [precioVar, setPrecioVar] = useState('');
@@ -42,6 +45,7 @@ export default function AdminProductoDetallePage() {
   const [errorVar, setErrorVar] = useState('');
 
   const [confirmandoVar, setConfirmandoVar] = useState<any>(null);
+  const [subiendoImagenVar, setSubiendoImagenVar] = useState<number | null>(null);
 
   async function cargar() {
     setCargando(true);
@@ -56,7 +60,18 @@ export default function AdminProductoDetallePage() {
     setSubcategorias(subs);
     setOpciones(ops);
 
-    // Precargamos las características de todas las opciones para el selector de variantes
+    // Nuevo: resolvemos la categoría del producto (vía su subcategoría)
+    // y pedimos solo las opciones habilitadas para esa categoría.
+    const subcategoriaDelProducto = subs.find(
+      (s: any) => s.id_subcategoria === prod.id_subcategoria
+    );
+    if (subcategoriaDelProducto?.id_categoria) {
+      const opsFiltradas = await getOpcionesPorCategoria(subcategoriaDelProducto.id_categoria);
+      setOpcionesDelProducto(opsFiltradas);
+    } else {
+      setOpcionesDelProducto([]);
+    }
+
     const mapa: Record<number, any[]> = {};
     await Promise.all(
       ops.map(async (op: any) => {
@@ -71,7 +86,6 @@ export default function AdminProductoDetallePage() {
     if (id) cargar();
   }, [id]);
 
-  // --- Producto ---
   function abrirEditarProducto() {
     setNombre(producto.nombre);
     setDescripcion(producto.descripcion || '');
@@ -101,7 +115,55 @@ export default function AdminProductoDetallePage() {
     setGuardandoProducto(false);
   }
 
-  // --- Variantes ---
+  async function handleSubirImagen(e: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+
+    if (!archivo.type.startsWith('image/')) {
+      setErrorImagen('El archivo debe ser una imagen');
+      return;
+    }
+    if (archivo.size > 5 * 1024 * 1024) {
+      setErrorImagen('La imagen no puede superar los 5MB');
+      return;
+    }
+
+    setSubiendoImagen(true);
+    setErrorImagen('');
+    try {
+      await subirImagenProducto(token, producto.id_producto, archivo);
+      await cargar();
+    } catch (err: any) {
+      setErrorImagen(err.message || 'Error al subir la imagen');
+    }
+    setSubiendoImagen(false);
+    e.target.value = '';
+  }
+
+  async function handleSubirImagenVariante(id_variante: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+
+    if (!archivo.type.startsWith('image/')) {
+      alert('El archivo debe ser una imagen');
+      return;
+    }
+    if (archivo.size > 5 * 1024 * 1024) {
+      alert('La imagen no puede superar los 5MB');
+      return;
+    }
+
+    setSubiendoImagenVar(id_variante);
+    try {
+      await subirImagenVariante(token, id_variante, archivo);
+      await cargar();
+    } catch (err: any) {
+      alert(err.message || 'Error al subir la imagen de la variante');
+    }
+    setSubiendoImagenVar(null);
+    e.target.value = '';
+  }
+
   function abrirCrearVariante() {
     setEditandoVar(null);
     setPrecioVar('');
@@ -246,6 +308,43 @@ export default function AdminProductoDetallePage() {
         )}
       </div>
 
+      {/* Imágenes generales del producto */}
+      <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-serif text-stone-800">Imágenes generales</h2>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleSubirImagen}
+              disabled={subiendoImagen}
+              className="hidden"
+            />
+            <span className="flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white text-sm rounded-full px-4 py-2 transition-colors">
+              <Upload className="w-4 h-4" />
+              {subiendoImagen ? 'Subiendo...' : 'Subir imagen'}
+            </span>
+          </label>
+        </div>
+
+        {errorImagen && <p className="text-sm text-red-500 mb-3">{errorImagen}</p>}
+
+        {!producto.imagenes || producto.imagenes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-10 text-stone-400">
+            <ImageIcon className="w-8 h-8 opacity-50" />
+            <p className="text-sm">Este producto todavía no tiene imágenes</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-3">
+            {producto.imagenes.map((url: string, i: number) => (
+              <div key={i} className="aspect-square bg-stone-100 rounded-lg overflow-hidden">
+                <img src={url} alt={`${producto.nombre} - imagen ${i + 1}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Variantes */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-serif text-stone-800">Variantes</h2>
@@ -280,30 +379,36 @@ export default function AdminProductoDetallePage() {
               </div>
             </div>
 
-            {opciones.map((op: any) => (
-              <div key={op.id_opcion}>
-                <p className="text-sm text-stone-600 mb-2">{op.nombre}</p>
-                <div className="flex flex-wrap gap-2">
-                  {(caractsPorOpcion[op.id_opcion] || []).map((c: any) => {
-                    const seleccionada = caractsSeleccionadas.includes(c.id_caracteristica);
-                    return (
-                      <button
-                        key={c.id_caracteristica}
-                        type="button"
-                        onClick={() => toggleCaracteristica(c.id_caracteristica)}
-                        className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
-                          seleccionada
-                            ? 'bg-amber-700 text-white border-amber-700'
-                            : 'bg-white text-stone-600 border-stone-300 hover:border-amber-400'
-                        }`}
-                      >
-                        {c.valor}
-                      </button>
-                    );
-                  })}
+            {opcionesDelProducto.length === 0 ? (
+              <p className="text-sm text-stone-400 italic">
+                Esta categoría no tiene opciones habilitadas todavía.
+              </p>
+            ) : (
+              opcionesDelProducto.map((op: any) => (
+                <div key={op.id_opcion}>
+                  <p className="text-sm text-stone-600 mb-2">{op.nombre}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(caractsPorOpcion[op.id_opcion] || []).map((c: any) => {
+                      const seleccionada = caractsSeleccionadas.includes(c.id_caracteristica);
+                      return (
+                        <button
+                          key={c.id_caracteristica}
+                          type="button"
+                          onClick={() => toggleCaracteristica(c.id_caracteristica)}
+                          className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                            seleccionada
+                              ? 'bg-amber-700 text-white border-amber-700'
+                              : 'bg-white text-stone-600 border-stone-300 hover:border-amber-400'
+                          }`}
+                        >
+                          {c.valor}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
 
             {errorVar && <p className="text-sm text-red-500">{errorVar}</p>}
             <div className="flex gap-2">
@@ -333,6 +438,7 @@ export default function AdminProductoDetallePage() {
                 <th className="px-4 py-3 font-medium">Características</th>
                 <th className="px-4 py-3 font-medium">Precio</th>
                 <th className="px-4 py-3 font-medium">Stock</th>
+                <th className="px-4 py-3 font-medium">Foto</th>
                 <th className="px-4 py-3 font-medium w-20">Acciones</th>
               </tr>
             </thead>
@@ -347,6 +453,29 @@ export default function AdminProductoDetallePage() {
                     ${Number(v.precio_venta).toLocaleString('es-AR')}
                   </td>
                   <td className="px-4 py-3 text-stone-600">{v.stock_disponible}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {v.imagenes?.[0] ? (
+                        <img src={v.imagenes[0]} alt="Imagen de la variante" className="w-14 h-14 object-cover rounded-md border border-stone-200" />
+                      ) : (
+                        <div className="flex items-center justify-center w-14 h-14 bg-stone-100 border border-stone-200 rounded-md">
+                          <ImageIcon className="w-6 h-6 text-stone-400" />
+                        </div>
+                      )}
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleSubirImagenVariante(v.id_variante, e)}
+                          disabled={subiendoImagenVar === v.id_variante}
+                          className="hidden"
+                        />
+                        <span className="text-xs text-amber-700 hover:text-amber-800 underline">
+                          {subiendoImagenVar === v.id_variante ? 'Subiendo...' : v.imagenes?.length ? 'Cambiar' : 'Subir'}
+                        </span>
+                      </label>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button onClick={() => abrirEditarVariante(v)} className="text-stone-400 hover:text-amber-700">
