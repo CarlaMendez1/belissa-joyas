@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { getProducto, getVariantesPorProducto, getSubcategorias, getOpciones, getOpcionesPorCategoria, getCaracteristicasPorOpcion } from '@/lib/api';
 import {
   actualizarProducto, crearVariante, actualizarVariante, eliminarVariante,
-  subirImagenProducto, subirImagenVariante,
+  subirImagenProducto, subirImagenVariante, eliminarImagenProducto,
 } from '@/lib/admin-api';
 import { ArrowLeft, Plus, Pencil, Trash2, X, Upload, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,8 +60,6 @@ export default function AdminProductoDetallePage() {
     setSubcategorias(subs);
     setOpciones(ops);
 
-    // Nuevo: resolvemos la categoría del producto (vía su subcategoría)
-    // y pedimos solo las opciones habilitadas para esa categoría.
     const subcategoriaDelProducto = subs.find(
       (s: any) => s.id_subcategoria === prod.id_subcategoria
     );
@@ -138,6 +136,16 @@ export default function AdminProductoDetallePage() {
     }
     setSubiendoImagen(false);
     e.target.value = '';
+  }
+
+  async function handleEliminarImagen(url: string) {
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    try {
+      await eliminarImagenProducto(token, producto.id_producto, url);
+      await cargar();
+    } catch (err: any) {
+      alert(err.message || 'Error al eliminar la imagen');
+    }
   }
 
   async function handleSubirImagenVariante(id_variante: number, e: React.ChangeEvent<HTMLInputElement>) {
@@ -337,8 +345,15 @@ export default function AdminProductoDetallePage() {
         ) : (
           <div className="grid grid-cols-4 gap-3">
             {producto.imagenes.map((url: string, i: number) => (
-              <div key={i} className="aspect-square bg-stone-100 rounded-lg overflow-hidden">
+              <div key={i} className="relative aspect-square bg-stone-100 rounded-lg overflow-hidden group">
                 <img src={url} alt={`${producto.nombre} - imagen ${i + 1}`} className="w-full h-full object-cover" />
+                <button
+                  onClick={() => handleEliminarImagen(url)}
+                  className="absolute top-2 right-2 bg-white/90 hover:bg-red-500 hover:text-white text-stone-600 rounded-full p-1.5 shadow-sm transition-colors opacity-0 group-hover:opacity-100"
+                  title="Eliminar imagen"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>

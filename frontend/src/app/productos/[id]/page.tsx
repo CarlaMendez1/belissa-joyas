@@ -70,6 +70,7 @@ export default function ProductoPage() {
     const encontrada = buscarVariante(nuevaSeleccion);
     setVarianteSeleccionada(encontrada || null);
     setCantidad(1);
+    setImagenSeleccionada(0);
   }
 
   async function handleAgregarAlCarrito() {
@@ -104,8 +105,13 @@ export default function ProductoPage() {
     </div>
   );
 
-const imagenes: string[] = producto.imagenes || [];
-const imagenPrincipal = imagenes[imagenSeleccionada];
+  // Si la variante seleccionada tiene sus propias imágenes, se usan esas.
+  // Si no tiene, se cae de vuelta a las imágenes generales del producto.
+  const imagenes: string[] =
+    (varianteSeleccionada?.imagenes && varianteSeleccionada.imagenes.length > 0)
+      ? varianteSeleccionada.imagenes
+      : (producto.imagenes || []);
+  const imagenPrincipal = imagenes[imagenSeleccionada];
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -125,32 +131,32 @@ const imagenPrincipal = imagenes[imagenSeleccionada];
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
           {/* Imagen del producto + galería */}
-<div className="flex flex-col gap-3">
-  <div className="bg-gradient-to-br from-stone-100 to-amber-50 rounded-2xl flex items-center justify-center h-96 overflow-hidden">
-    {imagenPrincipal ? (
-      <img src={imagenPrincipal} alt={producto.nombre} className="w-full h-full object-cover" />
-    ) : (
-      <Gem className="w-24 h-24 text-amber-600 opacity-60" />
-    )}
-  </div>
+          <div className="flex flex-col gap-3">
+            <div className="bg-gradient-to-br from-stone-100 to-amber-50 rounded-2xl flex items-center justify-center h-96 overflow-hidden">
+              {imagenPrincipal ? (
+                <img src={imagenPrincipal} alt={producto.nombre} className="w-full h-full object-cover" />
+              ) : (
+                <Gem className="w-24 h-24 text-amber-600 opacity-60" />
+              )}
+            </div>
 
-  {imagenes.length > 1 && (
-    <div className="flex gap-2">
-      {imagenes.map((url, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => setImagenSeleccionada(i)}
-          className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
-            i === imagenSeleccionada ? 'border-amber-700' : 'border-transparent hover:border-stone-300'
-          }`}
-        >
-          <img src={url} alt={`${producto.nombre} - miniatura ${i + 1}`} className="w-full h-full object-cover" />
-        </button>
-      ))}
-    </div>
-  )}
-</div>
+            {imagenes.length > 1 && (
+              <div className="flex gap-2">
+                {imagenes.map((url, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setImagenSeleccionada(i)}
+                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
+                      i === imagenSeleccionada ? 'border-amber-700' : 'border-transparent hover:border-stone-300'
+                    }`}
+                  >
+                    <img src={url} alt={`${producto.nombre} - miniatura ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Info del producto */}
           <div className="flex flex-col gap-6">

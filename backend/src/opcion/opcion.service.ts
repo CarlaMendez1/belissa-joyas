@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Opcion } from './opcion.entity.js';
 import { Categoria } from '../categoria/categoria.entity.js';
+import { Caracteristica } from '../caracteristica/caracteristica.entity.js';
 import { CrearOpcionDto } from './dto/crear-opcion.dto.js';
 import { ActualizarOpcionDto } from './dto/actualizar-opcion.dto.js';
 
@@ -13,10 +14,10 @@ export class OpcionService {
     private readonly repo: Repository<Opcion>,
     @InjectRepository(Categoria)
     private readonly categoriaRepo: Repository<Categoria>,
+    @InjectRepository(Caracteristica)
+    private readonly caracteristicaRepo: Repository<Caracteristica>,
   ) {}
 
-  // Trae las opciones junto con sus categorías asignadas,
-  // para que el panel admin pueda mostrar/editar los checkboxes.
   findAll() {
     return this.repo.find({
       order: { nombre: 'ASC' },
@@ -55,8 +56,30 @@ export class OpcionService {
     return this.repo.save(opcion);
   }
 
-  async remove(id_opcion: number) {
+   async remove(id_opcion: number) {
     const opcion = await this.findById(id_opcion);
+
+    // Traemos los ids de las características de esta opción.
+    const caracteristicas = await this.caracteristicaRepo.find({
+      where: { id_opcion },
+      select: { id_caracteristica: true },
+    });
+    const idsCaracteristicas = caracteristicas.map((c) => c.id_caracteristica);
+
+    if (idsCaracteristicas.length > 0) {
+      // Primero limpiamos la tabla puente variante_caracteristica,
+      // para no violar fk_vc_caracteristica.
+      await this.repo.manager
+        .createQueryBuilder()
+        .delete()
+        .from('variante_caracteristica')
+        .where('id_caracteristica IN (:...ids)', { ids: idsCaracteristicas })
+        .execute();
+
+      // Después borramos las características de esta opción.
+      await this.caracteristicaRepo.delete({ id_opcion });
+    }
+
     await this.repo.remove(opcion);
     return { mensaje: 'Opción eliminada' };
   }
