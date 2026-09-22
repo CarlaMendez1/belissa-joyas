@@ -1,13 +1,18 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { VarianteService } from './variante.service.js';
 import { CrearVarianteDto } from './dto/crear-variante.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/roles.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
+import { UploadService } from '../upload/upload.service.js';
 
 @Controller('variantes')
 export class VarianteController {
-  constructor(private readonly service: VarianteService) {}
+  constructor(
+    private readonly service: VarianteService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Get('producto/:id')
   findByProducto(@Param('id') id: string) {
@@ -24,7 +29,12 @@ export class VarianteController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Post(':id/imagen')
-  agregarImagen(@Param('id') id: string, @Body('url') url: string) {
+  @UseInterceptors(FileInterceptor('imagen'))
+  async agregarImagen(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const url = await this.uploadService.subirImagen(file.buffer);
     return this.service.agregarImagen(+id, url);
   }
 

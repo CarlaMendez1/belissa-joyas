@@ -22,7 +22,7 @@ export class EmailService {
     }
   }
 
-  async enviar(destinatario: string, asunto: string, contenido: string): Promise<boolean> {
+  async enviar(destinatario: string, asunto: string, contenido: string, html?: string): Promise<boolean> {
     if (!this.habilitado || !this.transporter) {
       this.logger.log(`📧 [SIMULADO] Email a ${destinatario} — Asunto: ${asunto}\n${contenido}`);
       return true;
@@ -34,6 +34,7 @@ export class EmailService {
         to: destinatario,
         subject: asunto,
         text: contenido,
+        ...(html ? { html } : {}),
       });
       this.logger.log(`Email enviado correctamente a ${destinatario}`);
       return true;

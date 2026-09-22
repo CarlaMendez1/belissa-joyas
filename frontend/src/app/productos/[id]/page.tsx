@@ -107,10 +107,9 @@ export default function ProductoPage() {
 
   // Si la variante seleccionada tiene sus propias imágenes, se usan esas.
   // Si no tiene, se cae de vuelta a las imágenes generales del producto.
-  const imagenes: string[] =
-    (varianteSeleccionada?.imagenes && varianteSeleccionada.imagenes.length > 0)
-      ? varianteSeleccionada.imagenes
-      : (producto.imagenes || []);
+ const imagenesVariante = (varianteSeleccionada?.imagenes || []).filter(Boolean);
+const imagenes: string[] =
+  imagenesVariante.length > 0 ? imagenesVariante : (producto.imagenes || []).filter(Boolean);
   const imagenPrincipal = imagenes[imagenSeleccionada];
 
   return (

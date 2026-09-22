@@ -1,4 +1,3 @@
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Usuario } from '../usuario/usuario.entity.js';
 import { NivelVip } from '../nivel-vip/nivel-vip.entity.js';
