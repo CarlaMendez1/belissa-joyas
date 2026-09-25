@@ -49,3 +49,15 @@ export async function getOpcionesPorCategoria(id_categoria: number) {
   const res = await fetch(`${API}/categorias/${id_categoria}/opciones`, { cache: 'no-store' });
   return res.json();
 }
+
+export async function getMiNivelVip(token: string) {
+  const res = await fetch(`${API}/cliente-vip/mi-nivel`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message || `Error ${res.status}`);
+  }
+  return res.json();
+}

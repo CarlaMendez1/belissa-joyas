@@ -27,9 +27,6 @@ export class ClienteVipService {
     private readonly emailService: EmailService,
   ) {}
 
-  // Calcula cantidad y monto de compras confirmadas de los últimos 12 meses.
-  // Usamos NOW() - INTERVAL directamente en SQL (no un Date de Node) para
-  // evitar el mismo bug de zona horaria que tuvimos con carritos abandonados.
   private async calcularMetricas(id_usuario: number) {
     const ventas = await this.ventaRepo.find({
       where: {
@@ -45,7 +42,6 @@ export class ClienteVipService {
     return { cantidad_compras, monto_acumulado };
   }
 
-  // Determina cuál es el nivel más alto que corresponde según las métricas.
   private async determinarNivel(cantidad_compras: number, monto_acumulado: number): Promise<NivelVip> {
     const niveles = await this.nivelVipRepo.find({ order: { monto_min_requerido: 'DESC' } });
 
@@ -57,12 +53,9 @@ export class ClienteVipService {
       }
     }
 
-    // Si no cumple ningún umbral (no debería pasar si Bronce está en 0/0), devolvemos el más bajo
     return niveles[niveles.length - 1];
   }
 
-  // Recalcula el nivel VIP de un usuario puntual. Se llama después de cada
-  // compra confirmada, y también desde el cron mensual para todos los usuarios.
   async recalcularNivel(id_usuario: number) {
     const { cantidad_compras, monto_acumulado } = await this.calcularMetricas(id_usuario);
     const nivelNuevo = await this.determinarNivel(cantidad_compras, monto_acumulado);
@@ -83,7 +76,6 @@ export class ClienteVipService {
     }
     await this.clienteVipRepo.save(clienteVip);
 
-    // Si subió de nivel (o es la primera categorización con nivel > Bronce), notificamos
     if (nivelAnteriorId !== nivelNuevo.id_nivel_vip) {
       await this.notificarCambioNivel(id_usuario, nivelNuevo, nivelAnteriorId !== undefined);
     }
@@ -118,8 +110,6 @@ ${nivelNuevo.beneficios || `${nivelNuevo.porcentaje_descuento}% de descuento en 
     });
   }
 
-  // Recorre a todos los usuarios que ya tienen un registro VIP y recalcula
-  // su nivel — captura tanto subidas como bajas por vencimiento de ventana.
   async recalcularTodos() {
     const todos = await this.clienteVipRepo.find();
     this.logger.log(`Recalculando nivel VIP de ${todos.length} clientes`);
@@ -133,5 +123,45 @@ ${nivelNuevo.beneficios || `${nivelNuevo.porcentaje_descuento}% de descuento en 
       where: { id_usuario },
       relations: { nivel: true },
     });
+  }
+
+  // Devuelve el nivel actual del usuario junto con su progreso hacia el
+  // próximo nivel, calculado en vivo (no depende de que ya se haya
+  // guardado en cliente_vip), para mostrarlo en el panel del cliente.
+  async obtenerProgreso(id_usuario: number) {
+    const { cantidad_compras, monto_acumulado } = await this.calcularMetricas(id_usuario);
+    const niveles = await this.nivelVipRepo.find({ order: { monto_min_requerido: 'ASC' } });
+
+    const nivelActual = await this.determinarNivel(cantidad_compras, monto_acumulado);
+    const indiceActual = niveles.findIndex(
+      (n) => n.id_nivel_vip === nivelActual.id_nivel_vip,
+    );
+    const proximoNivel = niveles[indiceActual + 1] || null;
+
+    let progreso: {
+      falta_monto: number;
+      falta_compras: number;
+    } | null = null;
+
+    if (proximoNivel) {
+      progreso = {
+        falta_monto: Math.max(
+          0,
+          Number(proximoNivel.monto_min_requerido) - monto_acumulado,
+        ),
+        falta_compras: Math.max(
+          0,
+          proximoNivel.cantidad_compras_min_requerida - cantidad_compras,
+        ),
+      };
+    }
+
+    return {
+      nivel_actual: nivelActual,
+      monto_acumulado,
+      cantidad_compras,
+      proximo_nivel: proximoNivel,
+      progreso,
+    };
   }
 }

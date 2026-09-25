@@ -10,7 +10,7 @@ import { useCarrito } from '@/context/carrito-context';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, LayoutDashboard } from "lucide-react"
+import { Crown, LogOut, LayoutDashboard } from "lucide-react"
 
 type Category = {
   id: string
@@ -106,6 +106,14 @@ export default function HomePage({
                             {session.user.email}
                           </p>
                         </div>
+                        <Link
+  href="/mi-cuenta"
+  onClick={() => setMenuAbierto(false)}
+  className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
+>
+  <Crown className="w-4 h-4" />
+  Mi nivel VIP
+</Link>
                         {(session.user as any).role === 'administrador' && (
                           <Link
                             href="/admin"

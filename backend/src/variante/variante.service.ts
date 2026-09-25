@@ -4,6 +4,8 @@ import { Repository, In } from 'typeorm';
 import { Variante, EstadoVariante } from './variante.entity.js';
 import { Caracteristica } from '../caracteristica/caracteristica.entity.js';
 import { CrearVarianteDto } from './dto/crear-variante.dto.js';
+import { AuditoriaService } from '../auditoria/auditoria.service.js';
+import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
 
 @Injectable()
 export class VarianteService {
@@ -12,6 +14,7 @@ export class VarianteService {
     private readonly repo: Repository<Variante>,
     @InjectRepository(Caracteristica)
     private readonly caracRepo: Repository<Caracteristica>,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   findByProducto(id_producto: number): Promise<Variante[]> {
@@ -21,8 +24,6 @@ export class VarianteService {
     });
   }
 
-  // Nuevo: valida que las características elegidas correspondan a opciones
-  // habilitadas para la categoría del producto (catálogo dinámico).
   private async validarCaracteristicasPorCategoria(
     id_producto: number,
     idsCaracteristicas: number[],
@@ -54,7 +55,7 @@ export class VarianteService {
     }
   }
 
-  async create(dto: CrearVarianteDto): Promise<Variante> {
+  async create(dto: CrearVarianteDto, id_usuario_admin: number): Promise<Variante> {
     if (dto.caracteristicas?.length) {
       await this.validarCaracteristicasPorCategoria(dto.id_producto, dto.caracteristicas);
     }
@@ -62,25 +63,58 @@ export class VarianteService {
     const caracteristicas = dto.caracteristicas?.length
       ? await this.caracRepo.findBy({ id_caracteristica: In(dto.caracteristicas) })
       : [];
-    return this.repo.save({
+    const variante = await this.repo.save({
       id_producto:      dto.id_producto,
       codigo_sku:       sku,
       precio_venta:     dto.precio_venta,
       stock_disponible: dto.stock_disponible ?? 0,
       caracteristicas,
     });
-  }
 
-  async actualizarStock(id: number, cantidad: number): Promise<Variante> {
-    await this.repo.update(id, { stock_disponible: cantidad });
-    const variante = await this.repo.findOneBy({ id_variante: id });
-    if (!variante) throw new NotFoundException(`Variante ${id} no encontrada`);
+    await this.auditoriaService.registrar({
+      id_usuario: id_usuario_admin,
+      accion: AccionAuditoria.CREAR,
+      entidad: 'Variante',
+      id_entidad: variante.id_variante,
+      datos_nuevos: {
+        codigo_sku: variante.codigo_sku,
+        precio_venta: variante.precio_venta,
+        stock_disponible: variante.stock_disponible,
+      },
+    });
+
     return variante;
   }
 
-  async update(id: number, dto: Partial<CrearVarianteDto>): Promise<Variante> {
+  async actualizarStock(id: number, cantidad: number, id_usuario_admin: number): Promise<Variante> {
+    const varianteAntes = await this.repo.findOneBy({ id_variante: id });
+    if (!varianteAntes) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+    await this.repo.update(id, { stock_disponible: cantidad });
     const variante = await this.repo.findOneBy({ id_variante: id });
     if (!variante) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+    await this.auditoriaService.registrar({
+      id_usuario: id_usuario_admin,
+      accion: AccionAuditoria.EDITAR,
+      entidad: 'Variante',
+      id_entidad: id,
+      datos_anteriores: { stock_disponible: varianteAntes.stock_disponible },
+      datos_nuevos: { stock_disponible: cantidad },
+    });
+
+    return variante;
+  }
+
+  async update(id: number, dto: Partial<CrearVarianteDto>, id_usuario_admin: number): Promise<Variante> {
+    const variante = await this.repo.findOneBy({ id_variante: id });
+    if (!variante) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+    const datosAnteriores = {
+      precio_venta: variante.precio_venta,
+      stock_disponible: variante.stock_disponible,
+    };
+
     if (dto.precio_venta !== undefined) variante.precio_venta = dto.precio_venta;
     if (dto.stock_disponible !== undefined) variante.stock_disponible = dto.stock_disponible;
     if (dto.caracteristicas !== undefined) {
@@ -91,7 +125,22 @@ export class VarianteService {
         ? await this.caracRepo.findBy({ id_caracteristica: In(dto.caracteristicas) })
         : [];
     }
-    return this.repo.save(variante);
+
+    const guardada = await this.repo.save(variante);
+
+    await this.auditoriaService.registrar({
+      id_usuario: id_usuario_admin,
+      accion: AccionAuditoria.EDITAR,
+      entidad: 'Variante',
+      id_entidad: id,
+      datos_anteriores: datosAnteriores,
+      datos_nuevos: {
+        precio_venta: guardada.precio_venta,
+        stock_disponible: guardada.stock_disponible,
+      },
+    });
+
+    return guardada;
   }
 
   async agregarImagen(id: number, url: string): Promise<Variante> {
@@ -102,10 +151,20 @@ export class VarianteService {
     return this.repo.save(variante);
   }
 
-  async bajaLogica(id: number): Promise<Variante> {
+  async bajaLogica(id: number, id_usuario_admin: number): Promise<Variante> {
     await this.repo.update(id, { estado: EstadoVariante.INACTIVA });
     const variante = await this.repo.findOneBy({ id_variante: id });
     if (!variante) throw new NotFoundException(`Variante ${id} no encontrada`);
+
+    await this.auditoriaService.registrar({
+      id_usuario: id_usuario_admin,
+      accion: AccionAuditoria.ELIMINAR,
+      entidad: 'Variante',
+      id_entidad: id,
+      datos_anteriores: { estado: 'activa' },
+      datos_nuevos: { estado: 'inactiva' },
+    });
+
     return variante;
   }
 }

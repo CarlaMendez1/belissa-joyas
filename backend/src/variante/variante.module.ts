@@ -5,9 +5,10 @@ import { Caracteristica } from '../caracteristica/caracteristica.entity.js';
 import { VarianteService } from './variante.service.js';
 import { VarianteController } from './variante.controller.js';
 import { UploadModule } from '../upload/upload.module.js';
+import { AuditoriaModule } from '../auditoria/auditoria.module.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Variante, Caracteristica]), UploadModule],
+  imports: [TypeOrmModule.forFeature([Variante, Caracteristica]), UploadModule, AuditoriaModule],
   providers: [VarianteService],
   controllers: [VarianteController],
   exports: [VarianteService],
