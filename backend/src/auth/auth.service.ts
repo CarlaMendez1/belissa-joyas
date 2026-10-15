@@ -14,11 +14,9 @@ export class AuthService {
   ) {}
 
   async registro(dto: RegistroDto) {
-    // Verificar que el email no esté registrado
     const existe = await this.usuarioService.findByEmail(dto.email);
     if (existe) throw new ConflictException('El email ya está registrado');
 
-    // Hashear la contraseña con bcrypt (costo 10 — RNF1)
     const password_hash = await bcrypt.hash(dto.password, 10);
 
     const usuario = await this.usuarioService.save({
@@ -41,23 +39,25 @@ export class AuthService {
 
     return this.generarToken(usuario);
   }
-async loginConGoogle(datos: { email: string; nombre: string; apellido: string; google_id: string }) {
-  let usuario = await this.usuarioService.findByEmail(datos.email);
 
-  if (!usuario) {
-    usuario = await this.usuarioService.save({
-      nombre: datos.nombre,
-      apellido: datos.apellido,
-      email: datos.email,
-      google_id: datos.google_id,
-      rol: RolUsuario.CLIENTE,
-    });
-  } else if (!usuario.google_id) {
-    usuario = await this.usuarioService.save({ ...usuario, google_id: datos.google_id });
+  async loginConGoogle(datos: { email: string; nombre: string; apellido: string; google_id: string }) {
+    let usuario = await this.usuarioService.findByEmail(datos.email);
+
+    if (!usuario) {
+      usuario = await this.usuarioService.save({
+        nombre: datos.nombre,
+        apellido: datos.apellido,
+        email: datos.email,
+        google_id: datos.google_id,
+        rol: RolUsuario.CLIENTE,
+      });
+    } else if (!usuario.google_id) {
+      usuario = await this.usuarioService.save({ ...usuario, google_id: datos.google_id });
+    }
+
+    return this.generarToken(usuario);
   }
 
-  return this.generarToken(usuario);
-}
   private generarToken(usuario: any) {
     const payload = {
       sub:   usuario.id_usuario,
@@ -76,4 +76,3 @@ async loginConGoogle(datos: { email: string; nombre: string; apellido: string; g
     };
   }
 }
-

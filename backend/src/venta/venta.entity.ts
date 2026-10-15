@@ -38,4 +38,7 @@ export class Venta {
   @ManyToOne(() => Carrito)
   @JoinColumn({ name: 'id_carrito' })
   carrito: Carrito;
+
+  @Column({ default: false })
+  stock_descontado: boolean;
 }
