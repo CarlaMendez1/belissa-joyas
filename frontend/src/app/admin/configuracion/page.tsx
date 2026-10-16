@@ -191,8 +191,8 @@ export default function AdminConfiguracionPage() {
                   )
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="text-lg font-semibold text-amber-700">{formatearValor(config)}</span>
-                    <button onClick={() => abrirEditar(config)} className="text-stone-400 hover:text-amber-700">
+                    <span className="text-lg font-semibold text-cocoa-taupe">{formatearValor(config)}</span>
+                    <button onClick={() => abrirEditar(config)} className="text-stone-400 hover:text-cocoa-taupe">
                       <Pencil className="w-4 h-4" />
                     </button>
                   </div>

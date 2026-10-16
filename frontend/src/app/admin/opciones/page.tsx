@@ -178,7 +178,7 @@ export default function AdminOpcionesPage() {
         <h1 className="text-2xl font-serif text-stone-800">Opciones y características</h1>
         <Button
           onClick={abrirCrear}
-          className="bg-amber-700 hover:bg-amber-800 text-white rounded-full flex items-center gap-2"
+          className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Nueva opción
@@ -222,8 +222,8 @@ export default function AdminOpcionesPage() {
                         onClick={() => toggleCategoria(cat.id_categoria)}
                         className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
                           seleccionada
-                            ? 'bg-amber-700 text-white border-amber-700'
-                            : 'bg-white text-stone-600 border-stone-300 hover:border-amber-400'
+                            ? 'bg-cocoa-taupe text-white border-cocoa-taupe'
+                            : 'bg-white text-stone-600 border-stone-300 hover:border-dusty-rose'
                         }`}
                       >
                         {cat.nombre}
@@ -239,7 +239,7 @@ export default function AdminOpcionesPage() {
               <Button
                 onClick={handleGuardar}
                 disabled={guardando}
-                className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+                className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
               >
                 {guardando ? 'Guardando...' : 'Guardar'}
               </Button>
@@ -288,7 +288,7 @@ export default function AdminOpcionesPage() {
                   </div>
                 </button>
                 <div className="flex gap-2">
-                  <button onClick={() => abrirEditar(op)} className="text-stone-400 hover:text-amber-700">
+                  <button onClick={() => abrirEditar(op)} className="text-stone-400 hover:text-cocoa-taupe">
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button onClick={() => pedirEliminarOpcion(op)} className="text-stone-400 hover:text-red-500">
@@ -303,7 +303,7 @@ export default function AdminOpcionesPage() {
                     <p className="text-sm font-medium text-stone-600">Valores posibles</p>
                     <button
                       onClick={() => abrirCrearCaract(op.id_opcion)}
-                      className="text-xs text-amber-700 hover:text-amber-800 flex items-center gap-1"
+                      className="text-xs text-cocoa-taupe hover:text-espresso-brown flex items-center gap-1"
                     >
                       <Plus className="w-3 h-3" />
                       Agregar valor
@@ -324,7 +324,7 @@ export default function AdminOpcionesPage() {
                             onClick={handleGuardarCaract}
                             disabled={guardandoCaract}
                             size="sm"
-                            className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+                            className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
                           >
                             {guardandoCaract ? 'Guardando...' : 'Guardar'}
                           </Button>
@@ -355,7 +355,7 @@ export default function AdminOpcionesPage() {
                           <span className="text-sm text-stone-800">{c.valor}</span>
                           <button
                             onClick={() => abrirEditarCaract(op.id_opcion, c)}
-                            className="text-stone-400 hover:text-amber-700"
+                            className="text-stone-400 hover:text-cocoa-taupe"
                           >
                             <Pencil className="w-3 h-3" />
                           </button>

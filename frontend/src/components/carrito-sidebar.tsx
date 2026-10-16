@@ -71,7 +71,7 @@ export default function CarritoSidebar() {
                       {item.variante?.codigo_sku}
                     </p>
                     <p className="text-xs text-stone-500">Cantidad: {item.cantidad}</p>
-                    <p className="text-sm font-semibold text-amber-700">
+                    <p className="text-sm font-semibold text-cocoa-taupe">
                       ${Number(item.precio_unitario).toLocaleString('es-AR')}
                     </p>
                   </div>
@@ -99,7 +99,7 @@ export default function CarritoSidebar() {
             <Button
               onClick={handleFinalizarCompra}
               disabled={procesando}
-              className="w-full bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+              className="w-full bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
             >
               {procesando ? 'Redirigiendo...' : 'Finalizar compra'}
             </Button>

@@ -6,7 +6,7 @@ import { getMiNivelVip } from '@/lib/api';
 import { Crown, ArrowLeft, Sparkles } from 'lucide-react';
 
 const COLORES_NIVEL: Record<string, { bg: string; texto: string; borde: string }> = {
-  Bronce: { bg: 'bg-amber-100', texto: 'text-amber-800', borde: 'border-amber-300' },
+  Bronce: { bg: 'bg-blush-oat/60', texto: 'text-espresso-brown', borde: 'border-dusty-rose' },
   Plata: { bg: 'bg-stone-200', texto: 'text-stone-700', borde: 'border-stone-400' },
   Oro: { bg: 'bg-yellow-100', texto: 'text-yellow-800', borde: 'border-yellow-400' },
 };
@@ -94,7 +94,7 @@ if (proximo && progreso) {
       <nav className="bg-white border-b border-stone-200 px-8 py-4">
         <button
           onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-stone-600 hover:text-amber-700 transition-colors text-sm"
+          className="flex items-center gap-2 text-stone-600 hover:text-cocoa-taupe transition-colors text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver a la tienda
@@ -127,7 +127,7 @@ if (proximo && progreso) {
         {proximo ? (
           <div className="bg-white border border-stone-200 rounded-2xl p-8">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-amber-700" />
+              <Sparkles className="w-5 h-5 text-cocoa-taupe" />
               <h3 className="font-serif text-lg text-stone-800">
                 Camino a {proximo.nombre_nivel}
               </h3>
@@ -135,7 +135,7 @@ if (proximo && progreso) {
 
             <div className="w-full bg-stone-100 rounded-full h-3 mb-6 overflow-hidden">
               <div
-                className="bg-amber-700 h-full rounded-full transition-all"
+                className="bg-cocoa-taupe h-full rounded-full transition-all"
                 style={{ width: `${porcentajeAvance}%` }}
               />
             </div>
@@ -165,7 +165,7 @@ if (proximo && progreso) {
           </div>
         ) : (
           <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center">
-            <Crown className="w-10 h-10 text-amber-700 mx-auto mb-3" />
+            <Crown className="w-10 h-10 text-cocoa-taupe mx-auto mb-3" />
             <p className="text-stone-700 font-medium">
               ¡Ya alcanzaste nuestro nivel máximo!
             </p>

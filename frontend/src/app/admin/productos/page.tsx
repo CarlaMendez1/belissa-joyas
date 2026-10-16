@@ -94,7 +94,7 @@ export default function AdminProductosListaPage() {
         <h1 className="text-2xl font-serif text-stone-800">Productos</h1>
         <Button
           onClick={abrirCrear}
-          className="bg-amber-700 hover:bg-amber-800 text-white rounded-full flex items-center gap-2"
+          className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Nuevo producto
@@ -137,7 +137,7 @@ export default function AdminProductosListaPage() {
               <Button
                 onClick={handleGuardar}
                 disabled={guardando}
-                className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+                className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
               >
                 {guardando ? 'Creando...' : 'Guardar'}
               </Button>
@@ -174,7 +174,7 @@ export default function AdminProductosListaPage() {
                     <div className="flex items-center gap-3">
                       <Link
                         href={`/admin/productos/${p.id_producto}`}
-                        className="text-stone-400 hover:text-amber-700"
+                        className="text-stone-400 hover:text-cocoa-taupe"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </Link>

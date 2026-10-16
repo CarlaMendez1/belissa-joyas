@@ -119,7 +119,7 @@ const imagenes: string[] =
       <nav className="bg-white border-b border-stone-200 px-8 py-4">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-stone-600 hover:text-amber-700 transition-colors text-sm"
+          className="flex items-center gap-2 text-stone-600 hover:text-cocoa-taupe transition-colors text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver al catálogo
@@ -131,11 +131,11 @@ const imagenes: string[] =
 
           {/* Imagen del producto + galería */}
           <div className="flex flex-col gap-3">
-            <div className="bg-gradient-to-br from-stone-100 to-amber-50 rounded-2xl flex items-center justify-center h-96 overflow-hidden">
+            <div className="bg-gradient-to-br from-stone-100 to-milk rounded-2xl flex items-center justify-center h-96 overflow-hidden">
               {imagenPrincipal ? (
                 <img src={imagenPrincipal} alt={producto.nombre} className="w-full h-full object-cover" />
               ) : (
-                <Gem className="w-24 h-24 text-amber-600 opacity-60" />
+                <Gem className="w-24 h-24 text-dusty-rose opacity-60" />
               )}
             </div>
 
@@ -147,7 +147,7 @@ const imagenes: string[] =
                     type="button"
                     onClick={() => setImagenSeleccionada(i)}
                     className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
-                      i === imagenSeleccionada ? 'border-amber-700' : 'border-transparent hover:border-stone-300'
+                      i === imagenSeleccionada ? 'border-cocoa-taupe' : 'border-transparent hover:border-stone-300'
                     }`}
                   >
                     <img src={url} alt={`${producto.nombre} - miniatura ${i + 1}`} className="w-full h-full object-cover" />
@@ -160,7 +160,7 @@ const imagenes: string[] =
           {/* Info del producto */}
           <div className="flex flex-col gap-6">
             <div>
-              <p className="text-xs text-amber-700 font-mono mb-2">{producto.codigo_sku}</p>
+              <p className="text-xs text-cocoa-taupe font-mono mb-2">{producto.codigo_sku}</p>
               <h1 className="text-3xl font-serif text-stone-800 mb-3">{producto.nombre}</h1>
               <p className="text-stone-500 leading-relaxed">{producto.descripcion}</p>
             </div>
@@ -179,8 +179,8 @@ const imagenes: string[] =
                         onClick={() => handleSeleccionarOpcion(grupo.id_opcion, valor)}
                         className={`px-4 py-2 rounded-lg border text-sm transition-all ${
                           isSelected
-                            ? 'bg-amber-700 text-white border-amber-700'
-                            : 'bg-white text-stone-700 border-stone-300 hover:border-amber-400'
+                            ? 'bg-cocoa-taupe text-white border-cocoa-taupe'
+                            : 'bg-white text-stone-700 border-stone-300 hover:border-dusty-rose'
                         }`}
                       >
                         {valor}
@@ -232,7 +232,7 @@ const imagenes: string[] =
             <Button
               onClick={handleAgregarAlCarrito}
               disabled={agregando || !varianteSeleccionada || varianteSeleccionada.stock_disponible === 0}
-              className="w-full bg-amber-700 hover:bg-amber-800 text-white py-3 rounded-full flex items-center justify-center gap-2"
+              className="w-full bg-cocoa-taupe hover:bg-espresso-brown text-white py-3 rounded-full flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-4 h-4" />
               {agregando ? 'Agregando...' : 'Agregar al carrito'}

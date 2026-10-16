@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -10,7 +9,7 @@ import { useCarrito } from '@/context/carrito-context';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
-import { Crown, LogOut, LayoutDashboard } from "lucide-react"
+import { LogOut, LayoutDashboard } from "lucide-react"
 
 type Category = {
   id: string
@@ -62,19 +61,19 @@ export default function HomePage({
 });
 
   return (
-    <div className="min-h-screen bg-stone-50 font-sans">
+    <div className="min-h-screen bg-milk font-sans">
       {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-stone-200 bg-white">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <span className="font-serif text-2xl font-semibold text-stone-800">Belissa Joyas</span>
+          <span className="font-serif text-2xl font-semibold text-espresso-brown">Belissa Joyas</span>
           <div className="hidden items-center gap-8 md:flex">
-            <a href="#inicio" className="text-sm text-stone-600 transition-colors hover:text-stone-900">
+            <a href="#inicio" className="text-sm text-stone-600 transition-colors hover:text-espresso-brown">
               Inicio
             </a>
-            <a href="#catalogo" className="text-sm text-stone-600 transition-colors hover:text-stone-900">
+            <a href="#catalogo" className="text-sm text-stone-600 transition-colors hover:text-espresso-brown">
               Catálogo
             </a>
-            <a href="#nosotros" className="text-sm text-stone-600 transition-colors hover:text-stone-900">
+            <a href="#nosotros" className="text-sm text-stone-600 transition-colors hover:text-espresso-brown">
               Nosotros
             </a>
           </div>
@@ -84,9 +83,14 @@ export default function HomePage({
                 type="button"
                 aria-label="Cuenta de usuario"
                 onClick={() => setMenuAbierto((v) => !v)}
-                className="text-stone-600 transition-colors hover:text-stone-900"
+                className="flex items-center gap-2 text-stone-600 transition-colors hover:text-espresso-brown"
               >
                 <User className="h-5 w-5" />
+                {session?.user && (
+                  <span className="hidden sm:inline text-sm">
+                    {session.user.name}
+                  </span>
+                )}
               </button>
 
               {menuAbierto && (
@@ -99,26 +103,18 @@ export default function HomePage({
                     {session?.user ? (
                       <>
                         <div className="px-4 py-3 border-b border-stone-100">
-                          <p className="text-sm font-medium text-stone-800 truncate">
+                          <p className="text-sm font-medium text-espresso-brown truncate">
                             {session.user.name}
                           </p>
                           <p className="text-xs text-stone-400 truncate">
                             {session.user.email}
                           </p>
                         </div>
-                        <Link
-  href="/mi-cuenta"
-  onClick={() => setMenuAbierto(false)}
-  className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
->
-  <Crown className="w-4 h-4" />
-  Mi nivel VIP
-</Link>
                         {(session.user as any).role === 'administrador' && (
                           <Link
                             href="/admin"
                             onClick={() => setMenuAbierto(false)}
-                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-blush-oat/40 transition-colors"
                           >
                             <LayoutDashboard className="w-4 h-4" />
                             Panel de administración
@@ -139,7 +135,7 @@ export default function HomePage({
                       <Link
                         href="/login"
                         onClick={() => setMenuAbierto(false)}
-                        className="block px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
+                        className="block px-4 py-2.5 text-sm text-stone-600 hover:bg-blush-oat/40 transition-colors"
                       >
                         Iniciar sesión
                       </Link>
@@ -150,9 +146,9 @@ export default function HomePage({
             </div>
 
             <button onClick={() => setAbierto(true)} className="relative">
-              <ShoppingBag className="h-5 w-5 text-stone-600 hover:text-amber-700" />
+              <ShoppingBag className="h-5 w-5 text-stone-600 hover:text-cocoa-taupe" />
               {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-cocoa-taupe text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                   {totalItems}
                 </span>
               )}
@@ -165,13 +161,13 @@ export default function HomePage({
         {/* Hero */}
         <section
           id="inicio"
-          className="bg-stone-100"
+          className="bg-blush-oat/40"
         >
           <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6 lg:px-8">
-            <p className="text-sm font-medium uppercase tracking-widest text-stone-500">
+            <p className="text-sm font-medium uppercase tracking-widest text-dusty-rose">
               Joyería de lujo
             </p>
-            <h1 className="mt-4 text-balance font-serif text-5xl font-semibold text-stone-800 md:text-6xl">
+            <h1 className="mt-4 text-balance font-serif text-5xl font-semibold text-espresso-brown md:text-6xl">
               Elevá tu elegancia
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-stone-500">
@@ -181,7 +177,7 @@ export default function HomePage({
             <div className="mt-10">
               <Button
                 size="lg"
-                className="rounded-full bg-stone-700 px-8 text-stone-50 hover:bg-stone-800"
+                className="rounded-full bg-espresso-brown px-8 text-stone-50 hover:bg-cocoa-taupe"
                 asChild
               >
                 <a href="#catalogo">Ver catálogo</a>
@@ -192,7 +188,7 @@ export default function HomePage({
 
         {/* Colecciones */}
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <h2 className="text-center font-serif text-3xl font-semibold text-stone-800">
+          <h2 className="text-center font-serif text-3xl font-semibold text-espresso-brown">
             Colecciones
           </h2>
           <p className="mt-3 text-center text-stone-500">
@@ -209,13 +205,13 @@ export default function HomePage({
                   className="text-left"
                 >
                   <Card
-                    className={`flex flex-col items-center gap-4 border-stone-200 p-8 text-center transition-colors hover:border-stone-400 ${
-                      isSelected ? "border-stone-700 bg-stone-700 text-stone-50" : "bg-white"
+                    className={`flex flex-col items-center gap-4 border-stone-200 p-8 text-center transition-colors hover:border-dusty-rose ${
+                      isSelected ? "border-cocoa-taupe bg-cocoa-taupe text-stone-50" : "bg-white"
                     }`}
                   >
-                    <Gem className={isSelected ? "h-8 w-8 text-stone-50" : "h-8 w-8 text-stone-500"} />
+                    <Gem className={isSelected ? "h-8 w-8 text-stone-50" : "h-8 w-8 text-dusty-rose"} />
                     <span
-                      className={`font-medium ${isSelected ? "text-white" : "text-stone-700"}`}
+                      className={`font-medium ${isSelected ? "text-white" : "text-espresso-brown"}`}
                     >
                       {category.name}
                     </span>
@@ -240,8 +236,8 @@ export default function HomePage({
   }}
   className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors
     ${isSelected
-      ? 'bg-stone-700 text-white border-stone-700'
-      : 'bg-white text-stone-600 border-stone-300 hover:border-stone-500'}`}
+      ? 'bg-espresso-brown text-white border-espresso-brown'
+      : 'bg-white text-stone-600 border-stone-300 hover:border-dusty-rose'}`}
 >
   {sub.name}
 </button>
@@ -257,7 +253,7 @@ export default function HomePage({
         {/* Catálogo */}
         <section id="catalogo" className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-8">
-            <h2 className="text-center font-serif text-3xl font-semibold text-stone-800">
+            <h2 className="text-center font-serif text-3xl font-semibold text-espresso-brown">
               Catálogo
             </h2>
             <div className="relative w-full max-w-md">
@@ -275,8 +271,8 @@ export default function HomePage({
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProducts.map((product) => (
               <Link key={product.id} href={`/productos/${product.id}`}>
-                <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:border-stone-400 hover:shadow-md cursor-pointer">
-                <div className="relative aspect-square bg-stone-100">
+                <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:border-dusty-rose hover:shadow-md cursor-pointer">
+                <div className="relative aspect-square bg-blush-oat/30">
   {product.imagenes?.[0] ? (
     <Image
       src={product.imagenes[0]}
@@ -287,17 +283,17 @@ export default function HomePage({
     />
   ) : (
     <div className="flex h-full items-center justify-center">
-      <Gem className="h-12 w-12 text-stone-500" />
+      <Gem className="h-12 w-12 text-dusty-rose" />
     </div>
   )}
 </div>
                   <div className="flex flex-col gap-2 p-6">
-                    <span className="font-mono text-xs text-stone-500">{product.sku}</span>
-                    <h3 className="font-serif text-xl text-stone-800">{product.name}</h3>
+                    <span className="font-mono text-xs text-dusty-rose">{product.sku}</span>
+                    <h3 className="font-serif text-xl text-espresso-brown">{product.name}</h3>
                     <p className="text-sm leading-relaxed text-stone-500">{product.description}</p>
                     <Button
                       variant="outline"
-                      className="mt-4 border-stone-300 text-stone-700 hover:bg-stone-100 hover:text-stone-900"
+                      className="mt-4 border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"
                     >
                       Ver producto
                     </Button>
@@ -316,7 +312,7 @@ export default function HomePage({
       </main>
 
       {/* Footer */}
-      <footer id="nosotros" className="bg-stone-800">
+      <footer id="nosotros" className="bg-espresso-brown">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-12 text-center sm:px-6 lg:px-8">
           <span className="font-serif text-2xl font-semibold text-stone-200">Belissa Joyas</span>
           <p className="text-sm text-stone-400">

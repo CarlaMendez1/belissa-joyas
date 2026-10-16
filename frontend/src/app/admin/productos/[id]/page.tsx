@@ -253,7 +253,7 @@ export default function AdminProductoDetallePage() {
     <div>
       <button
         onClick={() => router.push('/admin/productos')}
-        className="flex items-center gap-2 text-stone-600 hover:text-amber-700 text-sm mb-6"
+        className="flex items-center gap-2 text-stone-600 hover:text-cocoa-taupe text-sm mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
         Volver a productos
@@ -263,11 +263,11 @@ export default function AdminProductoDetallePage() {
       <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xs font-mono text-amber-700 mb-1">{producto.codigo_sku}</p>
+            <p className="text-xs font-mono text-cocoa-taupe mb-1">{producto.codigo_sku}</p>
             <h1 className="text-xl font-serif text-stone-800">{producto.nombre}</h1>
           </div>
           {!editandoProducto && (
-            <button onClick={abrirEditarProducto} className="text-stone-400 hover:text-amber-700">
+            <button onClick={abrirEditarProducto} className="text-stone-400 hover:text-cocoa-taupe">
               <Pencil className="w-4 h-4" />
             </button>
           )}
@@ -302,7 +302,7 @@ export default function AdminProductoDetallePage() {
               <Button
                 onClick={handleGuardarProducto}
                 disabled={guardandoProducto}
-                className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+                className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
               >
                 {guardandoProducto ? 'Guardando...' : 'Guardar'}
               </Button>
@@ -328,7 +328,7 @@ export default function AdminProductoDetallePage() {
               disabled={subiendoImagen}
               className="hidden"
             />
-            <span className="flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white text-sm rounded-full px-4 py-2 transition-colors">
+            <span className="flex items-center gap-2 bg-cocoa-taupe hover:bg-espresso-brown text-white text-sm rounded-full px-4 py-2 transition-colors">
               <Upload className="w-4 h-4" />
               {subiendoImagen ? 'Subiendo...' : 'Subir imagen'}
             </span>
@@ -365,7 +365,7 @@ export default function AdminProductoDetallePage() {
         <h2 className="text-lg font-serif text-stone-800">Variantes</h2>
         <Button
           onClick={abrirCrearVariante}
-          className="bg-amber-700 hover:bg-amber-800 text-white rounded-full flex items-center gap-2"
+          className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Nueva variante
@@ -412,8 +412,8 @@ export default function AdminProductoDetallePage() {
                           onClick={() => toggleCaracteristica(c.id_caracteristica)}
                           className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
                             seleccionada
-                              ? 'bg-amber-700 text-white border-amber-700'
-                              : 'bg-white text-stone-600 border-stone-300 hover:border-amber-400'
+                              ? 'bg-cocoa-taupe text-white border-cocoa-taupe'
+                              : 'bg-white text-stone-600 border-stone-300 hover:border-dusty-rose'
                           }`}
                         >
                           {c.valor}
@@ -430,7 +430,7 @@ export default function AdminProductoDetallePage() {
               <Button
                 onClick={handleGuardarVariante}
                 disabled={guardandoVar}
-                className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+                className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
               >
                 {guardandoVar ? 'Guardando...' : 'Guardar'}
               </Button>
@@ -485,7 +485,7 @@ export default function AdminProductoDetallePage() {
                           disabled={subiendoImagenVar === v.id_variante}
                           className="hidden"
                         />
-                        <span className="text-xs text-amber-700 hover:text-amber-800 underline">
+                        <span className="text-xs text-cocoa-taupe hover:text-espresso-brown underline">
                           {subiendoImagenVar === v.id_variante ? 'Subiendo...' : v.imagenes?.length ? 'Cambiar' : 'Subir'}
                         </span>
                       </label>
@@ -493,7 +493,7 @@ export default function AdminProductoDetallePage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button onClick={() => abrirEditarVariante(v)} className="text-stone-400 hover:text-amber-700">
+                      <button onClick={() => abrirEditarVariante(v)} className="text-stone-400 hover:text-cocoa-taupe">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => pedirEliminarVariante(v)} className="text-stone-400 hover:text-red-500">

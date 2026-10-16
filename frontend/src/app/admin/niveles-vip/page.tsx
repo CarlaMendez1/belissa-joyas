@@ -70,7 +70,7 @@ export default function AdminNivelesVipPage() {
   }
 
   const coloresPorNivel: Record<string, string> = {
-    Bronce: 'text-amber-700 bg-amber-50 border-amber-200',
+    Bronce: 'text-cocoa-taupe bg-blush-oat/40 border-dusty-rose',
     Plata: 'text-stone-500 bg-stone-50 border-stone-300',
     Oro: 'text-yellow-600 bg-yellow-50 border-yellow-300',
   };
@@ -130,7 +130,7 @@ export default function AdminNivelesVipPage() {
                       onClick={() => handleGuardar(nivel.id_nivel_vip)}
                       disabled={guardando}
                       size="sm"
-                      className="bg-amber-700 hover:bg-amber-800 text-white rounded-full flex items-center gap-1"
+                      className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full flex items-center gap-1"
                     >
                       <Check className="w-3.5 h-3.5" />
                       Guardar

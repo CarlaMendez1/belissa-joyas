@@ -171,7 +171,7 @@ export default function AdminCategoriasPage() {
         <h1 className="text-2xl font-serif text-stone-800">Categorías</h1>
         <Button
           onClick={abrirCrear}
-          className="bg-amber-700 hover:bg-amber-800 text-white rounded-full flex items-center gap-2"
+          className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Nueva categoría
@@ -202,7 +202,7 @@ export default function AdminCategoriasPage() {
               <Button
                 onClick={handleGuardar}
                 disabled={guardando}
-                className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+                className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
               >
                 {guardando ? 'Guardando...' : 'Guardar'}
               </Button>
@@ -236,7 +236,7 @@ export default function AdminCategoriasPage() {
                   <span className="text-stone-400 text-sm">{cat.descripcion}</span>
                 </button>
                 <div className="flex gap-2">
-                  <button onClick={() => abrirEditar(cat)} className="text-stone-400 hover:text-amber-700">
+                  <button onClick={() => abrirEditar(cat)} className="text-stone-400 hover:text-cocoa-taupe">
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button onClick={() => pedirEliminarCategoria(cat)} className="text-stone-400 hover:text-red-500">
@@ -251,7 +251,7 @@ export default function AdminCategoriasPage() {
                     <p className="text-sm font-medium text-stone-600">Subcategorías</p>
                     <button
                       onClick={() => abrirCrearSub(cat.id_categoria)}
-                      className="text-xs text-amber-700 hover:text-amber-800 flex items-center gap-1"
+                      className="text-xs text-cocoa-taupe hover:text-espresso-brown flex items-center gap-1"
                     >
                       <Plus className="w-3 h-3" />
                       Agregar subcategoría
@@ -277,7 +277,7 @@ export default function AdminCategoriasPage() {
                             onClick={handleGuardarSub}
                             disabled={guardandoSub}
                             size="sm"
-                            className="bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+                            className="bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
                           >
                             {guardandoSub ? 'Guardando...' : 'Guardar'}
                           </Button>
@@ -314,7 +314,7 @@ export default function AdminCategoriasPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => abrirEditarSub(cat.id_categoria, sub)}
-                              className="text-stone-400 hover:text-amber-700"
+                              className="text-stone-400 hover:text-cocoa-taupe"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
@@ -350,5 +350,3 @@ export default function AdminCategoriasPage() {
     </div>
   );
 }
-
-
