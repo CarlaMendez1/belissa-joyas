@@ -416,7 +416,7 @@ export default function AdminProductoDetallePage() {
                               : 'bg-white text-stone-600 border-stone-300 hover:border-dusty-rose'
                           }`}
                         >
-                          {c.valor}
+                          {c.valor}{op.tipo_dato === 'numero' ? ` ${op.unidad}` : ''}
                         </button>
                       );
                     })}
@@ -462,7 +462,10 @@ export default function AdminProductoDetallePage() {
                 <tr key={v.id_variante} className="border-t border-stone-100">
                   <td className="px-4 py-3 font-mono text-xs text-stone-500">{v.codigo_sku}</td>
                   <td className="px-4 py-3 text-stone-600">
-                    {v.caracteristicas?.map((c: any) => c.valor).join(', ') || '—'}
+                    {v.caracteristicas?.map((c: any) => {
+  const op = opciones.find((o: any) => o.id_opcion === c.id_opcion);
+  return op?.tipo_dato === 'numero' ? `${c.valor} ${op.unidad}` : c.valor;
+}).join(', ') || '—'}
                   </td>
                   <td className="px-4 py-3 text-stone-800">
                     ${Number(v.precio_venta).toLocaleString('es-AR')}

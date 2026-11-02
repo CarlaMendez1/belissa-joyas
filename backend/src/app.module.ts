@@ -18,6 +18,7 @@ import { TareasModule } from './tareas/tareas.module.js';
 import { EmailModule } from './email/email.module.js';
 import { NivelVipModule } from './nivel-vip/nivel-vip.module.js';
 import { ClienteVipModule } from './cliente-vip/cliente-vip.module.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -53,6 +54,7 @@ import { ClienteVipModule } from './cliente-vip/cliente-vip.module.js';
     EmailModule,
     NivelVipModule,
     ClienteVipModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

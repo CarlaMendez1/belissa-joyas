@@ -43,7 +43,7 @@ export async function eliminarCategoria(token: string, id: number) {
 }
 
 // --- Opciones ---
-export async function crearOpcion(token: string, dto: { nombre: string }) {
+export async function crearOpcion(token: string, dto: { nombre: string; tipo_dato: 'texto' | 'numero'; unidad?: string; categorias?: number[] }) {
   const res = await fetch(`${API}/opciones`, {
     method: 'POST',
     headers: headers(token),
@@ -52,7 +52,7 @@ export async function crearOpcion(token: string, dto: { nombre: string }) {
   return manejarRespuesta(res);
 }
 
-export async function actualizarOpcion(token: string, id: number, dto: { nombre?: string }) {
+export async function actualizarOpcion(token: string, id: number, dto: Partial<{ nombre: string; tipo_dato: 'texto' | 'numero'; unidad: string; categorias: number[] }>) {
   const res = await fetch(`${API}/opciones/${id}`, {
     method: 'PATCH',
     headers: headers(token),
@@ -245,5 +245,27 @@ export async function eliminarImagenProducto(token: string, id_producto: number,
     headers: headers(token),
     body: JSON.stringify({ url }),
   });
+  return manejarRespuesta(res);
+}
+
+
+// --- Dashboard ---
+export interface DashboardResumen {
+  productos_activos: number;
+  categorias: number;
+  clientes_vip: { total: number; por_nivel: { nivel: string | null; cantidad: number }[] };
+  ventas_confirmadas: { dias: number; cantidad: number; monto_total: number };
+  actividad_reciente: {
+    id_log: number;
+    accion: 'crear' | 'editar' | 'eliminar';
+    entidad: string;
+    id_entidad: number;
+    fecha: string;
+    usuario: string | null;
+  }[];
+}
+
+export async function getDashboardResumen(token: string): Promise<DashboardResumen> {
+  const res = await fetch(`${API}/dashboard/resumen`, { headers: headers(token), cache: 'no-store' });
   return manejarRespuesta(res);
 }

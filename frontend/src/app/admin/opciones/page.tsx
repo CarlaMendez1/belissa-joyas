@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/confirm-dialog';
 
+type TipoDato = 'texto' | 'numero';
+const REGEX_NUMERO = /^[0-9]+(\.[0-9]+)?$/;
+
 export default function AdminOpcionesPage() {
   const { data: session } = useSession();
   const token = (session as any)?.access_token;
@@ -23,6 +26,8 @@ export default function AdminOpcionesPage() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [editando, setEditando] = useState<any>(null);
   const [nombre, setNombre] = useState('');
+  const [tipoDato, setTipoDato] = useState<TipoDato>('texto');
+  const [unidad, setUnidad] = useState('');
   const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<number[]>([]);
   const [guardando, setGuardando] = useState(false);
 
@@ -51,6 +56,8 @@ export default function AdminOpcionesPage() {
   function abrirCrear() {
     setEditando(null);
     setNombre('');
+    setTipoDato('texto');
+    setUnidad('');
     setCategoriasSeleccionadas([]);
     setError('');
     setMostrarForm(true);
@@ -59,6 +66,8 @@ export default function AdminOpcionesPage() {
   function abrirEditar(opcion: any) {
     setEditando(opcion);
     setNombre(opcion.nombre);
+    setTipoDato(opcion.tipo_dato === 'numero' ? 'numero' : 'texto');
+    setUnidad(opcion.unidad || '');
     setCategoriasSeleccionadas((opcion.categorias || []).map((c: any) => c.id_categoria));
     setError('');
     setMostrarForm(true);
@@ -82,13 +91,23 @@ export default function AdminOpcionesPage() {
       setError('El nombre es obligatorio');
       return;
     }
+    if (tipoDato === 'numero' && !unidad.trim()) {
+      setError('Indicá la unidad de medida (ej: cm, mm, g)');
+      return;
+    }
     setGuardando(true);
     setError('');
     try {
+      const datos = {
+        nombre,
+        tipo_dato: tipoDato,
+        ...(tipoDato === 'numero' ? { unidad } : {}),
+        categorias: categoriasSeleccionadas,
+      };
       if (editando) {
-        await actualizarOpcion(token, editando.id_opcion, { nombre, categorias: categoriasSeleccionadas });
+        await actualizarOpcion(token, editando.id_opcion, datos);
       } else {
-        await crearOpcion(token, { nombre, categorias: categoriasSeleccionadas });
+        await crearOpcion(token, datos);
       }
       await cargar();
       cerrarForm();
@@ -156,13 +175,22 @@ export default function AdminOpcionesPage() {
       setErrorCaract('El valor es obligatorio');
       return;
     }
+    const opcionActual = opciones.find((o) => o.id_opcion === formCaract.id_opcion);
+    let valor = valorCaract.trim();
+    if (opcionActual?.tipo_dato === 'numero') {
+      valor = valor.replace(',', '.');
+      if (!REGEX_NUMERO.test(valor)) {
+        setErrorCaract(`Solo se admiten números en ${opcionActual.unidad} (ej: 12 o 12.5)`);
+        return;
+      }
+    }
     setGuardandoCaract(true);
     setErrorCaract('');
     try {
       if (formCaract.editando) {
-        await actualizarCaracteristica(token, formCaract.editando.id_caracteristica, { valor: valorCaract });
+        await actualizarCaracteristica(token, formCaract.editando.id_caracteristica, { valor });
       } else {
-        await crearCaracteristica(token, { id_opcion: formCaract.id_opcion, valor: valorCaract });
+        await crearCaracteristica(token, { id_opcion: formCaract.id_opcion, valor });
       }
       await recargarCaracts(formCaract.id_opcion);
       setFormCaract(null);
@@ -171,7 +199,7 @@ export default function AdminOpcionesPage() {
     }
     setGuardandoCaract(false);
   }
-
+  
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -206,6 +234,47 @@ export default function AdminOpcionesPage() {
               <label className="text-sm text-stone-600 mb-1 block">Nombre</label>
               <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Material" />
             </div>
+
+            <div>
+              <label className="text-sm text-stone-600 mb-2 block">Tipo de valores</label>
+              <div className="flex gap-2">
+                {([
+                  ['texto', 'Texto (ej: Oro 18k)'],
+                  ['numero', 'Número con unidad (ej: 45 cm)'],
+                ] as [TipoDato, string][]).map(([valor, etiqueta]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    onClick={() => setTipoDato(valor)}
+                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                      tipoDato === valor
+                        ? 'bg-cocoa-taupe text-white border-cocoa-taupe'
+                        : 'bg-white text-stone-600 border-stone-300 hover:border-dusty-rose'
+                    }`}
+                  >
+                    {etiqueta}
+                  </button>
+                ))}
+              </div>
+              {editando && (
+                <p className="text-xs text-stone-400 mt-1">
+                  Para pasar a número, todos los valores existentes de la opción deben ser números.
+                </p>
+              )}
+            </div>
+
+            {tipoDato === 'numero' && (
+              <div>
+                <label className="text-sm text-stone-600 mb-1 block">Unidad de medida</label>
+                <Input
+                  value={unidad}
+                  onChange={(e) => setUnidad(e.target.value)}
+                  maxLength={20}
+                  placeholder="Ej: cm, mm, g"
+                  className="max-w-40"
+                />
+              </div>
+            )}
 
             <div>
               <label className="text-sm text-stone-600 mb-2 block">Categorías donde aplica</label>
@@ -271,6 +340,9 @@ export default function AdminOpcionesPage() {
                   )}
                   <div>
                     <span className="text-stone-800 font-medium">{op.nombre}</span>
+                    <span className="ml-2 text-xs text-cocoa-taupe bg-blush-oat/50 rounded-full px-2 py-0.5">
+                      {op.tipo_dato === 'numero' ? `Número · ${op.unidad}` : 'Texto'}
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {(op.categorias || []).length === 0 ? (
                         <span className="text-xs text-stone-400 italic">Sin categorías asignadas</span>
@@ -313,11 +385,17 @@ export default function AdminOpcionesPage() {
                   {formCaract?.id_opcion === op.id_opcion && (
                     <div className="bg-white border border-stone-200 rounded-lg p-4 mb-3">
                       <div className="flex flex-col gap-2">
-                        <Input
-                          value={valorCaract}
-                          onChange={(e) => setValorCaract(e.target.value)}
-                          placeholder="Ej: Oro 18k"
-                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={valorCaract}
+                            onChange={(e) => setValorCaract(e.target.value)}
+                            inputMode={op.tipo_dato === 'numero' ? 'decimal' : 'text'}
+                            placeholder={op.tipo_dato === 'numero' ? 'Ej: 45 o 45.5' : 'Ej: Oro 18k'}
+                          />
+                          {op.tipo_dato === 'numero' && (
+                            <span className="text-sm text-stone-500 whitespace-nowrap">{op.unidad}</span>
+                          )}
+                        </div>
                         {errorCaract && <p className="text-xs text-red-500">{errorCaract}</p>}
                         <div className="flex gap-2">
                           <Button
@@ -352,7 +430,9 @@ export default function AdminOpcionesPage() {
                           key={c.id_caracteristica}
                           className="flex items-center gap-2 bg-white border border-stone-200 rounded-full pl-3 pr-2 py-1"
                         >
-                          <span className="text-sm text-stone-800">{c.valor}</span>
+                          <span className="text-sm text-stone-800">
+                            {c.valor}{op.tipo_dato === 'numero' ? ` ${op.unidad}` : ''}
+                          </span>
                           <button
                             onClick={() => abrirEditarCaract(op.id_opcion, c)}
                             className="text-stone-400 hover:text-cocoa-taupe"

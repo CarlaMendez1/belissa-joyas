@@ -78,6 +78,9 @@ export class PagoService {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const backendUrl = this.configService.get<string>('BACKEND_PUBLIC_URL');
 
+    // Mercado Pago solo acepta auto_return con back_urls públicas en HTTPS:
+    // en desarrollo (localhost) lo omitimos para que no rechace la preferencia.
+    const autoReturn = frontendUrl?.startsWith('https://') ? ('approved' as const) : undefined;
     const preference = new Preference(this.client);
     const resultado = await preference.create({
       body: {
@@ -94,6 +97,7 @@ export class PagoService {
           failure: `${frontendUrl}/pago/error`,
           pending: `${frontendUrl}/pago/pendiente`,
         },
+        ...(autoReturn && { auto_return: autoReturn }),
         notification_url: this.configService.get<string>('NOTIFICATION_URL') || `${backendUrl}/pago/webhook`,
       },
     });

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Opcion } from './opcion.entity.js';
@@ -6,6 +6,15 @@ import { Categoria } from '../categoria/categoria.entity.js';
 import { Caracteristica } from '../caracteristica/caracteristica.entity.js';
 import { CrearOpcionDto } from './dto/crear-opcion.dto.js';
 import { ActualizarOpcionDto } from './dto/actualizar-opcion.dto.js';
+import { normalizarTexto, traducirErrorBD } from '../common/db-errors.js';
+
+const MENSAJES_BD = {
+  uq_opcion_nombre_normalizado: 'Ya existe una opción con ese nombre',
+  ck_opcion_unidad: 'Las opciones numéricas requieren unidad y las de texto no deben tenerla',
+  ck_opcion_nombre_no_vacio: 'El nombre no puede estar vacío',
+  trg_opcion_cambio_tipo:
+    'No se puede cambiar la opción a numérica: tiene valores que no son números. Corregí o eliminá esos valores primero.',
+};
 
 @Injectable()
 export class OpcionService {
@@ -40,23 +49,37 @@ export class OpcionService {
   }
 
   async create(dto: CrearOpcionDto) {
-    const existente = await this.repo.findOneBy({ nombre: dto.nombre });
-    if (existente) throw new ConflictException('Ya existe una opción con ese nombre');
-
     const categorias = await this.resolverCategorias(dto.categorias);
-    return this.repo.save({ nombre: dto.nombre, categorias });
+    try {
+      return await this.repo.save({
+        nombre: normalizarTexto(dto.nombre),
+        tipo_dato: dto.tipo_dato,
+        unidad: dto.tipo_dato === 'numero' ? normalizarTexto(dto.unidad ?? '') : null,
+        categorias,
+      });
+    } catch (e) {
+      traducirErrorBD(e, MENSAJES_BD);
+    }
   }
 
   async update(id_opcion: number, dto: ActualizarOpcionDto) {
     const opcion = await this.findById(id_opcion);
-    if (dto.nombre !== undefined) opcion.nombre = dto.nombre;
+    if (dto.nombre !== undefined) opcion.nombre = normalizarTexto(dto.nombre);
+    if (dto.tipo_dato !== undefined) opcion.tipo_dato = dto.tipo_dato;
+    if (dto.unidad !== undefined) opcion.unidad = normalizarTexto(dto.unidad);
+    // Al volver a texto la unidad se limpia; si es numérica debe quedar una unidad
+    if (opcion.tipo_dato === 'texto') opcion.unidad = null;
     if (dto.categorias !== undefined) {
       opcion.categorias = await this.resolverCategorias(dto.categorias);
     }
-    return this.repo.save(opcion);
+    try {
+      return await this.repo.save(opcion);
+    } catch (e) {
+      traducirErrorBD(e, MENSAJES_BD);
+    }
   }
 
-   async remove(id_opcion: number) {
+  async remove(id_opcion: number) {
     const opcion = await this.findById(id_opcion);
 
     // Traemos los ids de las características de esta opción.

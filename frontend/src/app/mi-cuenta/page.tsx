@@ -15,6 +15,8 @@ type NivelVip = {
   nombre_nivel: string;
   porcentaje_descuento: number;
   beneficios?: string;
+  monto_min_requerido?: number | string;
+  cantidad_compras_min_requerida?: number;
 };
 
 type ProgresoVip = {
@@ -44,7 +46,7 @@ export default function MiCuentaPage() {
       return;
     }
 
-    getMiNivelVip(token)
+      getMiNivelVip(token as string)
       .then(setDatos)
       .catch((err) => setError(err.message || 'No se pudo cargar tu información'))
       .finally(() => setCargando(false));
@@ -68,8 +70,8 @@ export default function MiCuentaPage() {
 
   const nivel = datos?.nivel_actual;
   const proximo = datos?.proximo_nivel;
-  const progreso = datos?.progreso;
-  const colores = COLORES_NIVEL[nivel?.nombre_nivel] || COLORES_NIVEL.Bronce;
+  const progreso: ProgresoVip = datos?.progreso ?? { falta_monto: 0, falta_compras: 0 };
+  const colores = COLORES_NIVEL[nivel?.nombre_nivel ?? ''] || COLORES_NIVEL.Bronce;
 
   // Porcentaje de avance hacia el próximo nivel, tomando el criterio
   // que esté más cerca de cumplirse (monto o cantidad de compras),
@@ -81,8 +83,9 @@ if (proximo && progreso) {
   if (Number(proximo.monto_min_requerido) > 0) {
     criterios.push(1 - progreso.falta_monto / Number(proximo.monto_min_requerido));
   }
-  if (proximo.cantidad_compras_min_requerida > 0) {
-    criterios.push(1 - progreso.falta_compras / proximo.cantidad_compras_min_requerida);
+    const comprasMin = proximo.cantidad_compras_min_requerida ?? 0;
+  if (comprasMin > 0) {
+    criterios.push(1 - progreso.falta_compras / comprasMin);
   }
 
   const avance = criterios.length > 0 ? Math.min(...criterios) : 1;

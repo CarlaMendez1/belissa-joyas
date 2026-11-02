@@ -7,17 +7,44 @@ import { useCarrito } from '@/context/carrito-context';
 import { Gem, ArrowLeft, ShoppingBag, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+interface Caracteristica {
+  id_opcion: number;
+  valor: string;
+}
+
+interface Variante {
+  id_variante: number;
+  precio_venta: number | string;
+  stock_disponible: number;
+  caracteristicas?: Caracteristica[];
+  imagenes?: string[];
+}
+
+interface Opcion {
+  id_opcion: number;
+  nombre: string;
+  tipo_dato?: string;
+  unidad?: string;
+}
+
+interface Producto {
+  nombre: string;
+  codigo_sku?: string;
+  descripcion?: string;
+  imagenes?: string[];
+}
+
 export default function ProductoPage() {
   const { id } = useParams();
   const router = useRouter();
   const { status } = useSession();
   const { agregarItem } = useCarrito();
 
-  const [producto, setProducto] = useState<any>(null);
-  const [variantes, setVariantes] = useState<any[]>([]);
-  const [varianteSeleccionada, setVarianteSeleccionada] = useState<any>(null);
+  const [producto, setProducto] = useState<Producto | null>(null);
+  const [variantes, setVariantes] = useState<Variante[]>([]);
+  const [varianteSeleccionada, setVarianteSeleccionada] = useState<Variante | null>(null);
   const [seleccion, setSeleccion] = useState<Record<number, string>>({});
-  const [opciones, setOpciones] = useState<any[]>([]);
+  const [opciones, setOpciones] = useState<Opcion[]>([]);
   const [cantidad, setCantidad] = useState(1);
   const [agregando, setAgregando] = useState(false);
   const [mensaje, setMensaje] = useState('');
@@ -32,7 +59,7 @@ export default function ProductoPage() {
         if (data.length > 0) {
           setVarianteSeleccionada(data[0]);
           const inicial: Record<number, string> = {};
-          data[0].caracteristicas?.forEach((c: any) => {
+          data[0].caracteristicas?.forEach((c: Caracteristica) => {
             inicial[c.id_opcion] = c.valor;
           });
           setSeleccion(inicial);
@@ -43,24 +70,29 @@ export default function ProductoPage() {
 
   const gruposOpciones = useMemo(() => {
     const mapa: Record<number, Set<string>> = {};
-    variantes.forEach((v: any) => {
-      v.caracteristicas?.forEach((c: any) => {
+    variantes.forEach((v: Variante) => {
+      v.caracteristicas?.forEach((c: Caracteristica) => {
         if (!mapa[c.id_opcion]) mapa[c.id_opcion] = new Set();
         mapa[c.id_opcion].add(c.valor);
       });
     });
-    return Object.entries(mapa).map(([id_opcion, valores]) => ({
-      id_opcion: Number(id_opcion),
-      nombre: opciones.find((o: any) => o.id_opcion === Number(id_opcion))?.nombre || `Opción ${id_opcion}`,
-      valores: Array.from(valores),
-    }));
+         return Object.entries(mapa).map(([id_opcion, valores]) => {
+      const opcion = opciones.find((o: Opcion) => o.id_opcion === Number(id_opcion));
+      return {
+        id_opcion: Number(id_opcion),
+        nombre: opcion?.nombre || `Opción ${id_opcion}`,
+        // Solo las opciones numéricas tienen unidad (ej: cm)
+        unidad: opcion?.tipo_dato === 'numero' ? (opcion.unidad as string) : '',
+        valores: Array.from(valores),
+      };
+    });
   }, [variantes, opciones]);
 
   function buscarVariante(sel: Record<number, string>) {
-    return variantes.find((v: any) => {
+    return variantes.find((v: Variante) => {
       const caracts = v.caracteristicas || [];
       if (caracts.length !== Object.keys(sel).length) return false;
-      return caracts.every((c: any) => sel[c.id_opcion] === c.valor);
+      return caracts.every((c: Caracteristica) => sel[c.id_opcion] === c.valor);
     });
   }
 
@@ -88,8 +120,8 @@ export default function ProductoPage() {
     try {
       await agregarItem(varianteSeleccionada.id_variante, cantidad);
       setMensaje('¡Producto agregado al carrito!');
-    } catch (err: any) {
-      if (err?.message === 'NO_AUTENTICADO') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === 'NO_AUTENTICADO') {
         setMensaje('Iniciá sesión para agregar productos al carrito.');
         setRequiereLogin(true);
       } else {
