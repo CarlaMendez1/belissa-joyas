@@ -9,6 +9,7 @@ import {
   UseGuards,
   UploadedFile,
   UseInterceptors,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductoService } from './producto.service.js';
@@ -38,8 +39,8 @@ export class ProductoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Post()
-  create(@Body() dto: CrearProductoDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CrearProductoDto, @Request() req: any) {
+    return this.service.create(dto, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,28 +50,30 @@ export class ProductoController {
   async subirImagen(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
+    @Request() req: any,
   ) {
     const url = await this.uploadService.subirImagen(file.buffer);
-    return this.service.agregarImagen(+id, url);
+    return this.service.agregarImagen(+id, url, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id/imagen')
-  async eliminarImagen(@Param('id') id: string, @Body('url') url: string) {
-    return this.service.eliminarImagen(+id, url);
+  async eliminarImagen(@Param('id') id: string, @Body('url') url: string, @Request() req: any) {
+    return this.service.eliminarImagen(+id, url, req.user.id_usuario);
   }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: Partial<CrearProductoDto>) {
-    return this.service.update(+id, body);
+  update(@Param('id') id: string, @Body() body: Partial<CrearProductoDto>, @Request() req: any) {
+    return this.service.update(+id, body, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id')
-  baja(@Param('id') id: string) {
-    return this.service.bajaLogica(+id);
+  baja(@Param('id') id: string, @Request() req: any) {
+    return this.service.bajaLogica(+id, req.user.id_usuario);
   }
 }

@@ -8,6 +8,8 @@ import { Usuario } from '../usuario/usuario.entity';
 import { NotificacionService } from '../notificacion/notificacion.service';
 import { EmailService } from '../email/email.service';
 import { TipoNotificacion, EstadoNotificacion } from '../notificacion/notificacion.entity';
+import { AuditoriaService } from '../auditoria/auditoria.service';
+
 
 describe('ClienteVipService', () => {
   let service: ClienteVipService;
@@ -56,6 +58,7 @@ describe('ClienteVipService', () => {
         { provide: getRepositoryToken(Usuario), useValue: mockUsuarioRepo },
         { provide: NotificacionService, useValue: mockNotificacionService },
         { provide: EmailService, useValue: mockEmailService },
+        { provide: AuditoriaService, useValue: { registrar: jest.fn().mockResolvedValue({}) } },
       ],
     }).compile();
 

@@ -10,6 +10,8 @@ import { Venta, EstadoCompra } from '../venta/venta.entity.js';
 import { DetalleVenta } from '../venta/detalle-venta.entity.js';
 import { Pago, EstadoPago } from './pago.entity.js';
 import { ClienteVipService } from '../cliente-vip/cliente-vip.service.js';
+import { AuditoriaService } from '../auditoria/auditoria.service.js';
+import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
 
 @Injectable()
 export class PagoService {
@@ -24,6 +26,7 @@ export class PagoService {
     @InjectRepository(Pago) private readonly pagoRepo: Repository<Pago>,
     private readonly clienteVipService: ClienteVipService,
     private readonly configService: ConfigService,
+    private readonly auditoriaService: AuditoriaService,
   ) {
     this.client = new MercadoPagoConfig({
       accessToken: this.configService.get<string>('MP_ACCESS_TOKEN')!,
@@ -81,6 +84,7 @@ export class PagoService {
     // Mercado Pago solo acepta auto_return con back_urls públicas en HTTPS:
     // en desarrollo (localhost) lo omitimos para que no rechace la preferencia.
     const autoReturn = frontendUrl?.startsWith('https://') ? ('approved' as const) : undefined;
+
     const preference = new Preference(this.client);
     const resultado = await preference.create({
       body: {
@@ -157,7 +161,17 @@ export class PagoService {
       .execute();
 
     if (nuevoEstado === EstadoPago.RECHAZADO) {
+      const ventaAntes = await this.ventaRepo.findOneBy({ id_venta });
       await this.ventaRepo.update(id_venta, { estado_compra: EstadoCompra.CANCELADA });
+      if (ventaAntes && ventaAntes.estado_compra !== EstadoCompra.CANCELADA) {
+        await this.auditarSeguro({
+          accion: AccionAuditoria.EDITAR,
+          entidad: 'Venta',
+          id_entidad: id_venta,
+          datos_anteriores: { estado_compra: ventaAntes.estado_compra },
+          datos_nuevos: { estado_compra: EstadoCompra.CANCELADA, motivo: 'Pago rechazado' },
+        });
+      }
       return { recibido: true };
     }
 
@@ -190,8 +204,11 @@ export class PagoService {
   // (para que el llamador sepa si debe recalcular VIP, mandar notificación, etc).
   private async procesarStockYCarrito(id_venta: number): Promise<boolean> {
     const dataSource = this.ventaRepo.manager.connection;
+    // Lo que se descontó, para auditarlo recién cuando la transacción se confirmó
+    let descuentos: { id_variante: number; sku: string; cantidad: number }[] = [];
+    let estadoAnterior: string | undefined;
 
-    return dataSource.transaction(async (manager) => {
+    const descontado = await dataSource.transaction(async (manager) => {
       const venta = await manager.findOne(Venta, {
         where: { id_venta },
         lock: { mode: 'pessimistic_write' },
@@ -207,7 +224,13 @@ export class PagoService {
         return false;
       }
 
+      estadoAnterior = venta.estado_compra;
       const detalles = await manager.find(DetalleVenta, { where: { id_venta } });
+      descuentos = detalles.map((d) => ({
+        id_variante: d.id_variante,
+        sku: d.sku_snapshot,
+        cantidad: d.cantidad,
+      }));
 
       for (const detalle of detalles) {
         await manager
@@ -233,5 +256,42 @@ export class PagoService {
 
       return true;
     });
+
+    if (descontado) {
+      // Acciones del sistema (webhook de Mercado Pago): sin usuario.
+      // Solo ids, SKU y cantidades: no se guardan datos de pago.
+      await this.auditarSeguro({
+        accion: AccionAuditoria.EDITAR,
+        entidad: 'Venta',
+        id_entidad: id_venta,
+        datos_anteriores: { estado_compra: estadoAnterior, stock_descontado: false },
+        datos_nuevos: { estado_compra: EstadoCompra.CONFIRMADA, stock_descontado: true },
+      });
+      for (const d of descuentos) {
+        await this.auditarSeguro({
+          accion: AccionAuditoria.EDITAR,
+          entidad: 'Variante',
+          id_entidad: d.id_variante,
+          datos_anteriores: null,
+          datos_nuevos: { sku: d.sku, stock_descontado_por_venta: d.cantidad, id_venta },
+        });
+      }
+    }
+    return descontado;
+  }
+
+  // La auditoría nunca debe romper el flujo de un pago ya aprobado.
+  private async auditarSeguro(datos: {
+    accion: AccionAuditoria;
+    entidad: string;
+    id_entidad: number | null;
+    datos_anteriores?: any;
+    datos_nuevos?: any;
+  }) {
+    try {
+      await this.auditoriaService.registrar({ id_usuario: null, ...datos });
+    } catch (e) {
+      console.error('[AUDITORIA] No se pudo registrar:', e);
+    }
   }
 }

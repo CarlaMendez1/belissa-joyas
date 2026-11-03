@@ -9,6 +9,9 @@ import { NotificacionService } from '../notificacion/notificacion.service.js';
 import { EmailService } from '../email/email.service.js';
 import { TipoNotificacion, EstadoNotificacion } from '../notificacion/notificacion.entity.js';
 import { Usuario } from '../usuario/usuario.entity.js';
+import { AuditoriaService } from '../auditoria/auditoria.service.js';
+import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
+
 
 @Injectable()
 export class ClienteVipService {
@@ -25,6 +28,7 @@ export class ClienteVipService {
     private readonly usuarioRepo: Repository<Usuario>,
     private readonly notificacionService: NotificacionService,
     private readonly emailService: EmailService,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   private async calcularMetricas(id_usuario: number) {
@@ -76,10 +80,28 @@ export class ClienteVipService {
     }
     await this.clienteVipRepo.save(clienteVip);
 
-    if (nivelAnteriorId !== nivelNuevo.id_nivel_vip) {
+        if (nivelAnteriorId !== nivelNuevo.id_nivel_vip) {
+      try {
+        const anterior = nivelAnteriorId
+          ? await this.nivelVipRepo.findOneBy({ id_nivel_vip: nivelAnteriorId })
+          : null;
+        await this.auditoriaService.registrar({
+          id_usuario: null, // lo hace el sistema
+          accion: AccionAuditoria.EDITAR,
+          entidad: 'ClienteVip',
+          id_entidad: id_usuario,
+          datos_anteriores: { nivel: anterior?.nombre_nivel ?? null },
+          datos_nuevos: {
+            nivel: nivelNuevo.nombre_nivel,
+            monto_acumulado,
+            cantidad_compras,
+          },
+        });
+      } catch (e) {
+        this.logger.error('No se pudo registrar la auditoría del nivel VIP', e as any);
+      }
       await this.notificarCambioNivel(id_usuario, nivelNuevo, nivelAnteriorId !== undefined);
     }
-
     return clienteVip;
   }
 

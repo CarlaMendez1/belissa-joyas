@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, UseGuards,
+  Param, Body, UseGuards, Request,
 } from '@nestjs/common';
 import { OpcionService } from './opcion.service.js';
 import { CrearOpcionDto } from './dto/crear-opcion.dto.js';
@@ -28,21 +28,21 @@ export class OpcionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Post()
-  create(@Body() dto: CrearOpcionDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CrearOpcionDto, @Request() req: any) {
+    return this.service.create(dto, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: ActualizarOpcionDto) {
-    return this.service.update(+id, dto);
+  update(@Param('id') id: string, @Body() dto: ActualizarOpcionDto, @Request() req: any) {
+    return this.service.update(+id, dto, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    return this.service.remove(+id, req.user.id_usuario);
   }
 }

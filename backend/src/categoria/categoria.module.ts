@@ -4,9 +4,10 @@ import { Categoria } from './categoria.entity.js';
 import { Opcion } from '../opcion/opcion.entity.js';
 import { CategoriaService } from './categoria.service.js';
 import { CategoriaController } from './categoria.controller.js';
+import { AuditoriaModule } from '../auditoria/auditoria.module.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Categoria, Opcion])],
+  imports: [TypeOrmModule.forFeature([Categoria, Opcion]), AuditoriaModule],
   providers: [CategoriaService],
   controllers: [CategoriaController],
   exports: [CategoriaService],

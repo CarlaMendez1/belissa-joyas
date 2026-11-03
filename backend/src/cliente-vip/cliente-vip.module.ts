@@ -6,6 +6,7 @@ import { Venta } from '../venta/venta.entity.js';
 import { Usuario } from '../usuario/usuario.entity.js';
 import { NotificacionModule } from '../notificacion/notificacion.module.js';
 import { EmailModule } from '../email/email.module.js';
+import { AuditoriaModule } from '../auditoria/auditoria.module.js';
 import { ClienteVipService } from './cliente-vip.service.js';
 import { ClienteVipController } from './cliente-vip.controller.js';
 
@@ -14,6 +15,7 @@ import { ClienteVipController } from './cliente-vip.controller.js';
     TypeOrmModule.forFeature([ClienteVip, NivelVip, Venta, Usuario]),
     NotificacionModule,
     EmailModule,
+    AuditoriaModule,
   ],
   providers: [ClienteVipService],
   controllers: [ClienteVipController],

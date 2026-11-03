@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, UseGuards,
+  Param, Body, UseGuards, Request,
 } from '@nestjs/common';
 import { CategoriaService } from './categoria.service.js';
 import { CrearCategoriaDto } from './dto/crear-categoria.dto.js';
@@ -31,21 +31,21 @@ export class CategoriaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Post()
-  create(@Body() dto: CrearCategoriaDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CrearCategoriaDto, @Request() req: any) {
+    return this.service.create(dto, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: ActualizarCategoriaDto) {
-    return this.service.update(+id, dto);
+  update(@Param('id') id: string, @Body() dto: ActualizarCategoriaDto, @Request() req: any) {
+    return this.service.update(+id, dto, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id')
-  baja(@Param('id') id: string) {
-    return this.service.bajaLogica(+id);
+  baja(@Param('id') id: string, @Request() req: any) {
+    return this.service.bajaLogica(+id, req.user.id_usuario);
   }
 }

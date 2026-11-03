@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, Query, UseGuards,
+  Param, Body, Query, UseGuards, Request,
 } from '@nestjs/common';
 import { CaracteristicaService } from './caracteristica.service.js';
 import { CrearCaracteristicaDto } from './dto/crear-caracteristica.dto.js';
@@ -28,21 +28,21 @@ export class CaracteristicaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Post()
-  create(@Body() dto: CrearCaracteristicaDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CrearCaracteristicaDto, @Request() req: any) {
+    return this.service.create(dto, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: ActualizarCaracteristicaDto) {
-    return this.service.update(+id, dto);
+  update(@Param('id') id: string, @Body() dto: ActualizarCaracteristicaDto, @Request() req: any) {
+    return this.service.update(+id, dto, req.user.id_usuario);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrador')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(+id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    return this.service.remove(+id, req.user.id_usuario);
   }
 }

@@ -10,6 +10,7 @@ import { Venta, EstadoCompra } from '../venta/venta.entity';
 import { DetalleVenta } from '../venta/detalle-venta.entity';
 import { Pago, EstadoPago } from './pago.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 
 // 1. Mocks de la SDK de Mercado Pago
 // Declaramos la función AFUERA para que el test y el servicio compartan la misma instancia
@@ -94,6 +95,7 @@ describe('PagoService', () => {
         { provide: getRepositoryToken(Pago), useValue: mockPagoRepo },
         { provide: ClienteVipService, useValue: mockClienteVipService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: AuditoriaService, useValue: { registrar: jest.fn().mockResolvedValue({}) } },
       ],
     }).compile();
 
