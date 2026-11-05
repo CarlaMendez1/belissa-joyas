@@ -38,14 +38,15 @@ export default function ProductoPage() {
   const { id } = useParams();
   const router = useRouter();
   const { status } = useSession();
-  const { agregarItem } = useCarrito();
+  const { agregarItem, carrito } = useCarrito();
 
   const [producto, setProducto] = useState<Producto | null>(null);
   const [variantes, setVariantes] = useState<Variante[]>([]);
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<Variante | null>(null);
   const [seleccion, setSeleccion] = useState<Record<number, string>>({});
   const [opciones, setOpciones] = useState<Opcion[]>([]);
-  const [cantidad, setCantidad] = useState(1);
+    // null = todavía no tocó la cantidad: se parte de la que ya tiene en el carrito (o 1)
+  const [cantidadElegida, setCantidadElegida] = useState<number | null>(null);
   const [agregando, setAgregando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [requiereLogin, setRequiereLogin] = useState(false);
@@ -68,6 +69,10 @@ export default function ProductoPage() {
     }
   }, [id]);
 
+   const enCarrito: number | undefined = (carrito?.items ?? []).find(
+    (i: { id_variante: number; cantidad: number }) => i.id_variante === varianteSeleccionada?.id_variante,
+  )?.cantidad;
+  const cantidad = cantidadElegida ?? enCarrito ?? 1;
   const gruposOpciones = useMemo(() => {
     const mapa: Record<number, Set<string>> = {};
     variantes.forEach((v: Variante) => {
@@ -101,7 +106,7 @@ export default function ProductoPage() {
     setSeleccion(nuevaSeleccion);
     const encontrada = buscarVariante(nuevaSeleccion);
     setVarianteSeleccionada(encontrada || null);
-    setCantidad(1);
+    setCantidad(null);
     setImagenSeleccionada(0);
   }
 
@@ -118,8 +123,9 @@ export default function ProductoPage() {
     setMensaje('');
     setRequiereLogin(false);
     try {
-      await agregarItem(varianteSeleccionada.id_variante, cantidad);
-      setMensaje('¡Producto agregado al carrito!');
+          await agregarItem(varianteSeleccionada.id_variante, cantidad);
+      setMensaje(enCarrito ? '¡Cantidad actualizada en el carrito!' : '¡Producto agregado al carrito!');
+      setCantidadElegida(null);
     } catch (err: unknown) {
       if (err instanceof Error && err.message === 'NO_AUTENTICADO') {
         setMensaje('Iniciá sesión para agregar productos al carrito.');
@@ -248,26 +254,29 @@ const imagenes: string[] =
               <div className="flex items-center border border-stone-300 rounded-lg overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => setCantidad(Math.max(1, cantidad - 1))}
+                  onClick={() => setCantidadElegida(Math.max(1, cantidad - 1))}
                   className="px-3 py-2 text-stone-600 hover:bg-stone-100 transition-colors"
                 >−</button>
                 <span className="px-4 py-2 text-stone-800 font-medium min-w-8 text-center">{cantidad}</span>
                 <button
                   type="button"
-                  onClick={() => setCantidad(Math.min(varianteSeleccionada?.stock_disponible || 10, cantidad + 1))}
+                  onClick={() => setCantidadElegida(Math.min(varianteSeleccionada?.stock_disponible || 10, cantidad + 1))}
                   className="px-3 py-2 text-stone-600 hover:bg-stone-100 transition-colors"
                 >+</button>
               </div>
+                            {enCarrito !== undefined && (
+                <span className="text-xs text-stone-500">Ya tenés {enCarrito} en el carrito</span>
+              )}
             </div>
 
             {/* Botón agregar al carrito */}
             <Button
               onClick={handleAgregarAlCarrito}
-              disabled={agregando || !varianteSeleccionada || varianteSeleccionada.stock_disponible === 0}
+              disabled={agregando || !varianteSeleccionada || varianteSeleccionada.stock_disponible === 0 || cantidad === enCarrito}
               className="w-full bg-cocoa-taupe hover:bg-espresso-brown text-white py-3 rounded-full flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-4 h-4" />
-              {agregando ? 'Agregando...' : 'Agregar al carrito'}
+              {agregando ? 'Guardando...' : enCarrito !== undefined ? 'Actualizar cantidad' : 'Agregar al carrito'}
             </Button>
 
             {/* Mensaje de confirmación */}

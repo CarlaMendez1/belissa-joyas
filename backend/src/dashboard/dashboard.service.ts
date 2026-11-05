@@ -90,8 +90,19 @@ export class DashboardService {
       accion: l.accion,
       entidad: l.entidad,
       id_entidad: l.id_entidad,
+      // Dato que identifica el cambio cuando no hay id numérico (clave de configuración, provincia)
+      detalle: this.detalleDe(l.datos_nuevos ?? l.datos_anteriores),
       fecha: l.fecha,
       usuario: l.usuario ? `${l.usuario.nombre} ${l.usuario.apellido}`.trim() : null,
     }));
+  }
+
+  // Solo se expone el texto de estas dos claves, nunca el resto del registro.
+  private detalleDe(datos: unknown): string | null {
+    if (!datos || typeof datos !== 'object') return null;
+    const { clave, provincia } = datos as { clave?: unknown; provincia?: unknown };
+    if (typeof clave === 'string') return clave;
+    if (typeof provincia === 'string') return provincia;
+    return null;
   }
 }

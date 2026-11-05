@@ -106,7 +106,6 @@ if (proximo && progreso) {
 
       <div className="max-w-2xl mx-auto px-6 py-12">
         <h1 className="text-2xl font-serif text-stone-800 mb-8">Mi nivel de fidelidad</h1>
-
         {/* Card de nivel actual */}
         <div className={`rounded-2xl border-2 ${colores.borde} ${colores.bg} p-8 mb-8`}>
           <div className="flex items-center gap-3 mb-2">

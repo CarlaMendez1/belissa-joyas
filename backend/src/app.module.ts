@@ -19,6 +19,8 @@ import { EmailModule } from './email/email.module.js';
 import { NivelVipModule } from './nivel-vip/nivel-vip.module.js';
 import { ClienteVipModule } from './cliente-vip/cliente-vip.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
+import { EnviosModule } from './envios/envios.module.js';
+import { PedidosModule } from './pedidos/pedidos.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -28,12 +30,12 @@ import { DashboardModule } from './dashboard/dashboard.module.js';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host:     config.get<string>('DB_HOST'),
-        port:     config.get<number>('DB_PORT'),
+        host: config.get<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT'),
         database: config.get<string>('DB_NAME'),
         username: config.get<string>('DB_USER'),
         password: config.get<string>('DB_PASS'),
-        entities:    [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false,
         logging: true,
       }),
@@ -55,6 +57,8 @@ import { DashboardModule } from './dashboard/dashboard.module.js';
     NivelVipModule,
     ClienteVipModule,
     DashboardModule,
+    EnviosModule,
+    PedidosModule,
   ],
 })
 export class AppModule {}

@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 
 // Claves que representan un tiempo en minutos, y por eso se editan como horas + minutos
 const CLAVES_TIEMPO = ['tiempo_abandono_carrito_minutos'];
+// Estas claves se editan desde la pantalla de Envíos, no desde acá
+const CLAVES_DE_ENVIOS = ['envio_precio_base', 'envio_gratis_desde', 'retiro_local_activo', 'retiro_local_direccion'];
 
 const NOMBRES_AMIGABLES: Record<string, string> = {
   tiempo_abandono_carrito_minutos: 'Tiempo de inactividad para considerar un carrito abandonado',
@@ -34,7 +36,7 @@ export default function AdminConfiguracionPage() {
   async function cargar() {
     setCargando(true);
     const data = await getConfiguracion(token);
-    setConfigs(data);
+    setConfigs(data.filter((c: { clave: string }) => !CLAVES_DE_ENVIOS.includes(c.clave)));
     setCargando(false);
   }
 

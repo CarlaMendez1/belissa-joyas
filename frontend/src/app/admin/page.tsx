@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { getDashboardResumen, type DashboardResumen } from '@/lib/admin-api';
 import { Package, FolderTree, Crown, ShoppingBag, Settings, SlidersHorizontal } from 'lucide-react';
-
+import { tituloRegistro } from '@/lib/auditoria-utils';
 const ACCIONES: Record<string, string> = { crear: 'creó', editar: 'editó', eliminar: 'eliminó' };
 
 const ACCESOS = [
@@ -122,7 +122,7 @@ export default function AdminInicioPage() {
                   <li key={a.id_log} className="px-4 py-3 text-sm">
                     <p className="text-espresso-brown">
                       <span className="font-medium">{a.usuario ?? 'Sistema'}</span> {ACCIONES[a.accion] ?? a.accion}{' '}
-                      {a.entidad} #{a.id_entidad}
+                      {tituloRegistro(a)}
                     </p>
                     <p className="text-xs text-cocoa-taupe">{formatoFecha(a.fecha)}</p>
                   </li>

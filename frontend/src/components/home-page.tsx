@@ -9,7 +9,7 @@ import { useCarrito } from '@/context/carrito-context';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, LayoutDashboard } from "lucide-react"
+import { LogOut, LayoutDashboard, Crown, MapPin, Package } from "lucide-react"
 
 type Category = {
   id: string
@@ -120,6 +120,30 @@ export default function HomePage({
                             Panel de administración
                           </Link>
                         )}
+                                                <Link
+                          href="/mi-cuenta"
+                          onClick={() => setMenuAbierto(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-blush-oat/40 transition-colors"
+                        >
+                          <Crown className="w-4 h-4" />
+                          Nivel VIP
+                        </Link>
+                                                <Link
+                          href="/mi-cuenta/direcciones"
+                          onClick={() => setMenuAbierto(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-blush-oat/40 transition-colors"
+                        >
+                          <MapPin className="w-4 h-4" />
+                          Mi direccion
+                        </Link>
+                                                <Link
+                          href="/mi-cuenta/pedidos"
+                          onClick={() => setMenuAbierto(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-blush-oat/40 transition-colors"
+                        >
+                          <Package className="w-4 h-4" />
+                          Mis pedidos
+                        </Link>
                         <button
                           onClick={() => {
                             setMenuAbierto(false);

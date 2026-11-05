@@ -10,12 +10,14 @@ import { PagoService } from './pago.service.js';
 import { PagoController } from './pago.controller.js';
 import { ClienteVipModule } from '../cliente-vip/cliente-vip.module.js';
 import { AuditoriaModule } from '../auditoria/auditoria.module.js';
+import { EnviosModule } from '../envios/envios.module.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Carrito, ItemCarrito, Variante, Venta, DetalleVenta, Pago]),
     ClienteVipModule,
     AuditoriaModule,
+    EnviosModule,
   ],
   providers: [PagoService],
   controllers: [PagoController],

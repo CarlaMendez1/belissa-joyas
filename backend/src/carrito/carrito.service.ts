@@ -42,7 +42,7 @@ export class CarritoService {
   private async armarRespuesta(carrito: Carrito, id_usuario: number) {
     const items = await this.itemRepo.find({
       where: { id_carrito: carrito.id_carrito },
-      relations: { variante: true },
+      relations: { variante: { producto: true } },
     });
 
     const clienteVip = await this.clienteVipService.obtenerPorUsuario(id_usuario);

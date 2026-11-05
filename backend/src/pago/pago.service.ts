@@ -11,6 +11,8 @@ import { DetalleVenta } from '../venta/detalle-venta.entity.js';
 import { Pago, EstadoPago } from './pago.entity.js';
 import { ClienteVipService } from '../cliente-vip/cliente-vip.service.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
+import { EnviosService } from '../envios/envios.service.js';
+import { CrearPreferenciaDto } from './dto/crear-preferencia.dto.js';
 import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
 
 @Injectable()
@@ -27,13 +29,17 @@ export class PagoService {
     private readonly clienteVipService: ClienteVipService,
     private readonly configService: ConfigService,
     private readonly auditoriaService: AuditoriaService,
+    private readonly enviosService: EnviosService,
   ) {
     this.client = new MercadoPagoConfig({
       accessToken: this.configService.get<string>('MP_ACCESS_TOKEN')!,
     });
   }
 
-  async crearPreferencia(id_usuario: number) {
+  // Calcula todo lo que el servidor necesita para cobrar: carrito, descuento VIP,
+  // dirección y costo de envío. Lo usan tanto el resumen que ve el cliente como la
+  // creación del pago, así los dos siempre coinciden.
+  private async prepararCheckout(id_usuario: number, dto: CrearPreferenciaDto) {
     const carrito = await this.carritoRepo.findOne({
       where: { id_usuario, estado: EstadoCarrito.ACTIVO },
     });
@@ -59,6 +65,43 @@ export class PagoService {
       0,
     );
 
+    // El costo de envío SIEMPRE lo calcula el servidor: nunca se confía en lo que
+    // mande el navegador. El envío gratis se evalúa sobre el subtotal de productos.
+    let direccion: Awaited<ReturnType<EnviosService['buscarPropia']>> | null = null;
+    if (dto.tipo_entrega === 'domicilio') {
+      if (!dto.id_direccion) throw new BadRequestException('Elegí una dirección de entrega');
+      direccion = await this.enviosService.buscarPropia(id_usuario, dto.id_direccion);
+    }
+    const envio = await this.enviosService.calcularCosto({
+      tipo_entrega: dto.tipo_entrega,
+      id_provincia: direccion?.id_provincia,
+      subtotal: precioTotalConDescuento,
+    });
+
+    return { carrito, itemsConDescuento, porcentajeDescuento, precioTotalConDescuento, direccion, envio };
+  }
+
+  // Resumen de lo que va a pagar el cliente (para mostrarlo antes de ir a Mercado Pago)
+  async resumenCheckout(id_usuario: number, dto: CrearPreferenciaDto) {
+    const { porcentajeDescuento, precioTotalConDescuento, envio } = await this.prepararCheckout(
+      id_usuario,
+      dto,
+    );
+    return {
+      descuento_vip_porcentaje: porcentajeDescuento,
+      subtotal_productos: Math.round(precioTotalConDescuento * 100) / 100,
+      costo_envio: envio.costo,
+      envio_gratis: envio.envio_gratis,
+      plazo_dias: envio.plazo_dias,
+      detalle_envio: envio.detalle,
+      total: Math.round((precioTotalConDescuento + envio.costo) * 100) / 100,
+    };
+  }
+
+  async crearPreferencia(id_usuario: number, dto: CrearPreferenciaDto) {
+    const { carrito, itemsConDescuento, precioTotalConDescuento, direccion, envio } =
+      await this.prepararCheckout(id_usuario, dto);
+
     const venta = await this.ventaRepo.save({
       id_usuario,
       id_carrito: carrito.id_carrito,
@@ -66,6 +109,22 @@ export class PagoService {
       estado_compra: EstadoCompra.PENDIENTE,
       metodo_pago: 'mercadopago',
       stock_descontado: false,
+      tipo_entrega: dto.tipo_entrega,
+      costo_envio: String(envio.costo),
+      estado_envio: 'pendiente_despacho',
+      // Copia de la dirección: si el cliente la edita después, este pedido no cambia
+      ...(direccion && {
+        id_direccion: direccion.id_direccion,
+        envio_destinatario: direccion.nombre_destinatario,
+        envio_telefono: direccion.telefono,
+        envio_calle: direccion.calle,
+        envio_numero: direccion.numero,
+        envio_piso_depto: direccion.piso_depto,
+        envio_localidad: direccion.localidad,
+        envio_provincia: direccion.provincia.nombre,
+        envio_codigo_postal: direccion.codigo_postal,
+        envio_observaciones: direccion.observaciones,
+      }),
     });
 
     for (const item of itemsConDescuento) {
@@ -88,13 +147,19 @@ export class PagoService {
     const preference = new Preference(this.client);
     const resultado = await preference.create({
       body: {
-        items: itemsConDescuento.map((item) => ({
-          id: String(item.id_variante),
-          title: item.variante.producto?.nombre || item.variante.codigo_sku,
-          quantity: item.cantidad,
-          unit_price: item.precio_con_descuento,
-          currency_id: 'ARS',
-        })),
+        items: [
+          ...itemsConDescuento.map((item) => ({
+            id: String(item.id_variante),
+            title: item.variante.producto?.nombre || item.variante.codigo_sku,
+            quantity: item.cantidad,
+            unit_price: item.precio_con_descuento,
+            currency_id: 'ARS',
+          })),
+          // Mercado Pago no acepta ítems de $0: solo se agrega si hay costo
+          ...(envio.costo > 0
+            ? [{ id: 'envio', title: 'Envío a domicilio', quantity: 1, unit_price: envio.costo, currency_id: 'ARS' }]
+            : []),
+        ],
         external_reference: String(venta.id_venta),
         back_urls: {
           success: `${frontendUrl}/pago/exito`,
@@ -110,7 +175,8 @@ export class PagoService {
       id_venta: venta.id_venta,
       id_preferencia_mp: resultado.id!,
       estado_pago: EstadoPago.PENDIENTE,
-      monto_abonado: venta.precio_total,
+      // Lo que realmente paga el cliente: productos + envío
+      monto_abonado: Math.round((Number(venta.precio_total) + envio.costo) * 100) / 100,
     });
 
     return { init_point: resultado.init_point, id_venta: venta.id_venta };

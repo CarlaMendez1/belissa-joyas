@@ -259,7 +259,8 @@ export interface DashboardResumen {
     id_log: number;
     accion: 'crear' | 'editar' | 'eliminar';
     entidad: string;
-    id_entidad: number;
+    id_entidad: number | null;
+    detalle: string | null;
     fecha: string;
     usuario: string | null;
   }[];
@@ -267,5 +268,154 @@ export interface DashboardResumen {
 
 export async function getDashboardResumen(token: string): Promise<DashboardResumen> {
   const res = await fetch(`${API}/dashboard/resumen`, { headers: headers(token), cache: 'no-store' });
+  return manejarRespuesta(res);
+}
+
+
+// --- Auditoría ---
+export interface RegistroAuditoria {
+  id_log: number;
+  accion: 'crear' | 'editar' | 'eliminar';
+  entidad: string;
+  id_entidad: number | null;
+  datos_anteriores: Record<string, unknown> | null;
+  datos_nuevos: Record<string, unknown> | null;
+  fecha: string;
+  usuario: string | null;
+}
+
+export interface RespuestaAuditoria {
+  items: RegistroAuditoria[];
+  total: number;
+  pagina: number;
+  limite: number;
+}
+
+export async function getAuditoria(
+  token: string,
+  filtros: { entidad?: string; accion?: string; desde?: string; hasta?: string; pagina?: number; limite?: number } = {},
+): Promise<RespuestaAuditoria> {
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([clave, valor]) => {
+    if (valor !== undefined && valor !== '') params.set(clave, String(valor));
+  });
+  const res = await fetch(`${API}/auditoria?${params.toString()}`, { headers: headers(token), cache: 'no-store' });
+  return manejarRespuesta(res);
+}
+
+export async function getEntidadesAuditoria(token: string): Promise<string[]> {
+  const res = await fetch(`${API}/auditoria/entidades`, { headers: headers(token), cache: 'no-store' });
+  return manejarRespuesta(res);
+}
+
+
+// --- Envíos (tarifas por provincia) ---
+export type TarifaEnvio = {
+  id_tarifa: number;
+  id_provincia: number;
+  precio: string;
+  plazo_dias: number | null;
+  activa: boolean;
+  provincia: { id_provincia: number; nombre: string };
+};
+
+export async function getTarifasEnvio(token: string): Promise<TarifaEnvio[]> {
+  const res = await fetch(`${API}/envios/tarifas`, {
+    headers: headers(token),
+    cache: 'no-store',
+  });
+  return manejarRespuesta(res);
+}
+
+export async function actualizarTarifaEnvio(
+  token: string,
+  id: number,
+  dto: { precio?: number; plazo_dias?: number | null; activa?: boolean },
+): Promise<TarifaEnvio> {
+  const res = await fetch(`${API}/envios/tarifas/${id}`, {
+    method: 'PATCH',
+    headers: headers(token),
+    body: JSON.stringify(dto),
+  });
+  return manejarRespuesta(res);
+}
+
+
+// --- Pedidos (envíos) ---
+export type EstadoEnvio = 'pendiente_despacho' | 'despachado' | 'retiro_listo' | 'entregado';
+
+export type Pedido = {
+  id_venta: number;
+  fecha_compra: string;
+  cliente: string | null;
+  email: string | null;
+  tipo_entrega: 'domicilio' | 'retiro';
+  estado_envio: EstadoEnvio;
+  subtotal_productos: number;
+  costo_envio: number;
+  total: number;
+  destino: string;
+  transportista: string | null;
+  numero_seguimiento: string | null;
+  fecha_despacho: string | null;
+  fecha_entrega: string | null;
+};
+
+export type PedidoDetalle = Pedido & {
+  telefono_contacto: string | null;
+  direccion: {
+    destinatario: string | null;
+    telefono: string | null;
+    calle: string | null;
+    numero: string | null;
+    piso_depto: string | null;
+    localidad: string | null;
+    provincia: string | null;
+    codigo_postal: string | null;
+    observaciones: string | null;
+  } | null;
+  items: {
+    id_detalle: number;
+    producto: string;
+    sku: string;
+    cantidad: number;
+    precio_unitario: number;
+    subtotal: number;
+  }[];
+};
+
+export async function getPedidos(
+  token: string,
+  filtros: { estado_envio?: string; pagina?: number; limite?: number } = {},
+): Promise<{ items: Pedido[]; total: number; pagina: number; limite: number }> {
+  const params = new URLSearchParams();
+  if (filtros.estado_envio) params.set('estado_envio', filtros.estado_envio);
+  if (filtros.pagina) params.set('pagina', String(filtros.pagina));
+  if (filtros.limite) params.set('limite', String(filtros.limite));
+  const res = await fetch(`${API}/pedidos?${params.toString()}`, {
+    headers: headers(token),
+    cache: 'no-store',
+  });
+  return manejarRespuesta(res);
+}
+
+export async function getPedido(token: string, id: number): Promise<PedidoDetalle> {
+  const res = await fetch(`${API}/pedidos/${id}`, {
+    headers: headers(token),
+    cache: 'no-store',
+  });
+  return manejarRespuesta(res);
+}
+
+export async function cambiarEstadoPedido(
+  token: string,
+  id: number,
+  dto: { estado_envio: EstadoEnvio; transportista?: string; numero_seguimiento?: string },
+): Promise<Pedido> {
+  const res = await fetch(`${API}/pedidos/${id}/estado`, {
+    method: 'PATCH',
+    headers: headers(token),
+    body: JSON.stringify(dto),
+  });
   return manejarRespuesta(res);
 }

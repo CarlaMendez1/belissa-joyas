@@ -21,6 +21,11 @@ export class Variante {
   @Column({ default: 0 })
   stock_disponible: number;
 
+  // Opcional: por si más adelante se cotiza por peso
+
+  @Column({ type: 'int', nullable: true })
+  peso_gramos: number | null;
+
   @Column({ type: 'jsonb', nullable: true })
   imagenes: string[];
 
@@ -34,7 +39,7 @@ export class Variante {
   @ManyToMany(() => Caracteristica)
   @JoinTable({
     name: 'variante_caracteristica',
-    joinColumn:        { name: 'id_variante',       referencedColumnName: 'id_variante' },
+    joinColumn: { name: 'id_variante', referencedColumnName: 'id_variante' },
     inverseJoinColumn: { name: 'id_caracteristica', referencedColumnName: 'id_caracteristica' },
   })
   caracteristicas: Caracteristica[];
