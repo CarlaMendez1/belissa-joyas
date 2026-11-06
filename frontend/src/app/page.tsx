@@ -56,8 +56,9 @@ const prods = productos
     name: p.nombre,
     description: p.descripcion || '',
     imagenes: p.imagenes || [],
+    precioDesde: p.precio_desde ?? null,
+    variosPrecios: Boolean(p.varios_precios),
   }));
-
 
  
   return (

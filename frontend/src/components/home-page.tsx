@@ -22,6 +22,8 @@ type Product = {
   name: string
   description: string
   imagenes?: string[]
+  precioDesde?: number | null
+  variosPrecios?: boolean
 }
 
 type Subcategory = {
@@ -315,6 +317,12 @@ export default function HomePage({
                     <span className="font-mono text-xs text-dusty-rose">{product.sku}</span>
                     <h3 className="font-serif text-xl text-espresso-brown">{product.name}</h3>
                     <p className="text-sm leading-relaxed text-stone-500">{product.description}</p>
+                        {product.precioDesde != null && (
+                      <p className="font-sans text-lg font-semibold text-espresso-brown">
+                        {product.variosPrecios && <span className="mr-1 text-sm font-normal text-stone-400">Desde</span>}
+                        ${Math.round(product.precioDesde).toLocaleString('es-AR')}
+                      </p>
+                    )}
                     <Button
                       variant="outline"
                       className="mt-4 border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"

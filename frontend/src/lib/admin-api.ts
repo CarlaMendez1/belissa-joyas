@@ -251,19 +251,49 @@ export async function eliminarImagenProducto(token: string, id_producto: number,
 
 // --- Dashboard ---
 export interface DashboardResumen {
-  productos_activos: number;
-  categorias: number;
-  clientes_vip: { total: number; por_nivel: { nivel: string | null; cantidad: number }[] };
-  ventas_confirmadas: { dias: number; cantidad: number; monto_total: number };
-  actividad_reciente: {
-    id_log: number;
-    accion: 'crear' | 'editar' | 'eliminar';
-    entidad: string;
-    id_entidad: number | null;
-    detalle: string | null;
+  ventas_mes: { cantidad: number; monto: number; monto_anterior: number; variacion_porcentaje: number | null };
+  usuarios_activos: { total: number; nuevos_mes: number };
+  clientes_vip: { total: number; nuevos_mes: number };
+  stock_critico: {
+    umbral: number;
+    total: number;
+    sin_stock: number;
+    items: { id_variante: number; id_producto: number; nombre: string; detalle: string; stock: number }[];
+  };
+  pedidos_por_despachar: {
+    total: number;
+    items: {
+      id_venta: number;
+      cliente: string;
+      tipo_entrega: string;
+      provincia: string | null;
+      estado_envio: string;
+      fecha: string;
+    }[];
+  };
+  ultimas_ventas: {
+    id_venta: number;
+    cliente: string;
+    producto: string | null;
+    otros_productos: number;
+    monto: number;
     fecha: string;
-    usuario: string | null;
   }[];
+  carritos_abandonados: {
+    total: number;
+    items: {
+      id_carrito: number;
+      cliente: string;
+      productos: number;
+      monto: number;
+      mail_enviado: boolean;
+      fecha: string;
+    }[];
+  };
+  pedidos_entregados_mes: number;
+  tasa_conversion: { carritos: number; porcentaje: number | null };
+  ventas_30_dias: { dia: string; monto: number }[];
+  ingresos_por_categoria: { categoria: string; monto: number }[];
 }
 
 export async function getDashboardResumen(token: string): Promise<DashboardResumen> {

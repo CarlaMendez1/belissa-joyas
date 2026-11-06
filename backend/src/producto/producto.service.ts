@@ -20,8 +20,28 @@ export class ProductoService {
     private readonly auditoriaService: AuditoriaService,
   ) {}
 
-  findAll(): Promise<Producto[]> {
-    return this.repo.find({ where: { estado: EstadoProducto.ACTIVO } });
+  // Lista de productos activos con el precio más bajo entre sus variantes activas,
+  // para mostrarlo en el catálogo ("Desde $X" si las variantes tienen precios distintos).
+  async findAll() {
+    const productos = await this.repo.find({ where: { estado: EstadoProducto.ACTIVO } });
+    const precios: { id_producto: number; precio_desde: string; precios_distintos: string }[] =
+    await this.repo.manager.query(
+      `SELECT id_producto,
+                MIN(precio_venta) AS precio_desde,
+                COUNT(DISTINCT precio_venta) AS precios_distintos
+           FROM variante
+          WHERE estado = 'activa'
+          GROUP BY id_producto`,
+      );
+    const porProducto = new Map(precios.map((f) => [Number(f.id_producto), f]));
+    return productos.map((p) => {
+      const fila = porProducto.get(p.id_producto);
+      return {
+        ...p,
+        precio_desde: fila ? Number(fila.precio_desde) : null,
+        varios_precios: fila ? Number(fila.precios_distintos) > 1 : false,
+      };
+    });
   }
 
   async findById(id: number): Promise<Producto> {
