@@ -21,6 +21,7 @@ import { ClienteVipModule } from './cliente-vip/cliente-vip.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { EnviosModule } from './envios/envios.module.js';
 import { PedidosModule } from './pedidos/pedidos.module.js';
+import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -59,6 +60,7 @@ import { PedidosModule } from './pedidos/pedidos.module.js';
     DashboardModule,
     EnviosModule,
     PedidosModule,
+    EstadisticasModule,
   ],
 })
 export class AppModule {}

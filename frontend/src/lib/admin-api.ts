@@ -419,3 +419,91 @@ export async function cambiarEstadoPedido(
   });
   return manejarRespuesta(res);
 }
+
+// --- Estadísticas ---
+export type Agrupacion = 'dia' | 'semana' | 'mes';
+
+export type EstadisticasVentas = {
+  rango: { desde: string; hasta: string };
+  agrupar: Agrupacion;
+  resumen: {
+    cantidad: number;
+    monto_productos: number;
+    monto_envio: number;
+    monto_total: number;
+    ticket_promedio: number;
+  };
+  serie: { periodo: string; cantidad: number; monto: number }[];
+};
+
+export type EstadisticasProductos = {
+  rango: { desde: string; hasta: string };
+  mas_vendidos: { id_producto: number; nombre: string; unidades: number; monto: number }[];
+  por_categoria: { categoria: string; unidades: number; monto: number }[];
+};
+
+export type EstadisticasEnvios = {
+  rango: { desde: string; hasta: string };
+  por_tipo: { tipo: string; cantidad: number; monto_envio: number; con_envio_gratis: number }[];
+  por_provincia: { provincia: string; cantidad: number; monto: number }[];
+  por_estado: { estado: string; cantidad: number }[];
+  horas_hasta_despacho: number | null;
+  dias_hasta_entrega: number | null;
+};
+
+export type Estadisticas = {
+  ventas: EstadisticasVentas;
+  productos: EstadisticasProductos;
+  envios: EstadisticasEnvios;
+};
+
+export async function getEstadisticas(
+  token: string,
+  filtros: { desde: string; hasta: string; agrupar: Agrupacion },
+): Promise<Estadisticas> {
+  const rango = `desde=${filtros.desde}&hasta=${filtros.hasta}`;
+  const pedir = async <T>(ruta: string): Promise<T> => {
+    const res = await fetch(`${API}/estadisticas/${ruta}`, { headers: headers(token), cache: 'no-store' });
+    return manejarRespuesta(res);
+  };
+  const [ventas, productos, envios] = await Promise.all([
+    pedir<EstadisticasVentas>(`ventas?${rango}&agrupar=${filtros.agrupar}`),
+    pedir<EstadisticasProductos>(`productos?${rango}`),
+    pedir<EstadisticasEnvios>(`envios?${rango}`),
+  ]);
+  return { ventas, productos, envios };
+}
+
+// --- Administradores ---
+export type Administrador = {
+  id_usuario: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  estado: string;
+  fecha_registro: string;
+};
+
+export type ListaAdministradores = {
+  puede_gestionar: boolean;
+  administradores: (Administrador & { es_principal: boolean })[];
+};
+
+export async function getAdministradores(token: string): Promise<ListaAdministradores> {
+  const res = await fetch(`${API}/administradores`, { headers: headers(token), cache: 'no-store' });
+  return manejarRespuesta(res);
+}
+
+export async function agregarAdministrador(token: string, email: string): Promise<Administrador> {
+  const res = await fetch(`${API}/administradores`, {
+    method: 'POST',
+    headers: headers(token),
+    body: JSON.stringify({ email }),
+  });
+  return manejarRespuesta(res);
+}
+
+export async function quitarAdministrador(token: string, id: number): Promise<Administrador> {
+  const res = await fetch(`${API}/administradores/${id}`, { method: 'DELETE', headers: headers(token) });
+  return manejarRespuesta(res);
+}

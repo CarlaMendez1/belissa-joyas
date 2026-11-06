@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, FolderTree, Package, Sliders, Settings, Crown, ScrollText, ArrowLeft, LogOut, Truck, Users, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Package, Sliders, Settings, Crown, ArrowLeft, LogOut, Truck, BarChart3, ShieldCheck, ClipboardList, ScrollText } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -30,12 +30,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/categorias', label: 'Categorías', icon: FolderTree },
     { href: '/admin/productos', label: 'Productos', icon: Package },
     { href: '/admin/opciones', label: 'Opciones', icon: Sliders },
-    { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
-    { href: '/admin/clientes', label: 'Clientes', icon: Users },
     { href: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList },
     { href: '/admin/envios', label: 'Envíos', icon: Truck },
+    { href: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3 },
     { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
     { href: '/admin/niveles-vip', label: 'Niveles VIP', icon: Crown },
+    { href: '/admin/administradores', label: 'Administradores', icon: ShieldCheck },
     { href: '/admin/auditoria', label: 'Auditoría', icon: ScrollText },
   
   ];
