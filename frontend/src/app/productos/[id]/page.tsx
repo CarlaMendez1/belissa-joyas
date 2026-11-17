@@ -106,7 +106,7 @@ export default function ProductoPage() {
     setSeleccion(nuevaSeleccion);
     const encontrada = buscarVariante(nuevaSeleccion);
     setVarianteSeleccionada(encontrada || null);
-    setCantidad(null);
+    setCantidadElegida(null);
     setImagenSeleccionada(0);
   }
 

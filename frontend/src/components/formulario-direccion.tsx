@@ -12,9 +12,11 @@ type Props = {
   error: string;
   onGuardar: (dto: DireccionInput) => void;
   onCancelar: () => void;
+  // false: no se muestra Cancelar (no hay a dónde volver, por ejemplo al cargar la primera dirección)
+  puedeCancelar?: boolean;
 };
 
-export default function FormularioDireccion({ provincias, inicial, guardando, error, onGuardar, onCancelar }: Props) {
+export default function FormularioDireccion({ provincias, inicial, guardando, error, onGuardar, onCancelar, puedeCancelar = true }: Props) {
   const [nombre, setNombre] = useState(inicial?.nombre_destinatario ?? '');
   const [telefono, setTelefono] = useState(inicial?.telefono ?? '');
   const [calle, setCalle] = useState(inicial?.calle ?? '');
@@ -130,9 +132,11 @@ export default function FormularioDireccion({ provincias, inicial, guardando, er
       {(errorLocal || error) && <p className="text-sm text-red-500">{errorLocal || error}</p>}
 
       <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={onCancelar} className="rounded-full">
-          Cancelar
-        </Button>
+        {puedeCancelar && (
+          <Button type="button" variant="outline" onClick={onCancelar} className="rounded-full">
+            Cancelar
+          </Button>
+        )}
         <Button
           type="submit"
           disabled={guardando}
