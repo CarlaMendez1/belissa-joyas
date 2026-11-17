@@ -38,7 +38,9 @@ import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
         password: config.get<string>('DB_PASS'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false,
-        logging: true,
+        // Las bases gestionadas (Neon, Render, etc.) exigen conexión cifrada
+        ssl: config.get<string>('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+        logging: process.env.NODE_ENV !== 'production',
       }),
     }),
     UsuarioModule,
