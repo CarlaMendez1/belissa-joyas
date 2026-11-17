@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PagoService } from './pago.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { EnviosService } from '../envios/envios.service';
 import { ClienteVipService } from '../cliente-vip/cliente-vip.service';
 import { Carrito, EstadoCarrito } from '../carrito/carrito.entity';
 import { ItemCarrito } from '../item-carrito/item-carrito.entity';
@@ -94,6 +95,13 @@ describe('PagoService', () => {
         { provide: getRepositoryToken(DetalleVenta), useValue: mockDetalleRepo },
         { provide: getRepositoryToken(Pago), useValue: mockPagoRepo },
         { provide: ClienteVipService, useValue: mockClienteVipService },
+        {
+          provide: EnviosService,
+          useValue: {
+            buscarPropia: jest.fn(),
+            calcularCosto: jest.fn().mockResolvedValue({ costo: 0, envio_gratis: false, plazo_dias: null, detalle: 'Retiro en local' }),
+          },
+        },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: AuditoriaService, useValue: { registrar: jest.fn().mockResolvedValue({}) } },
       ],
@@ -109,13 +117,13 @@ describe('PagoService', () => {
   describe('crearPreferencia()', () => {
     it('debe lanzar NotFoundException si no hay carrito activo', async () => {
       mockCarritoRepo.findOne.mockResolvedValue(null);
-      await expect(service.crearPreferencia(1)).rejects.toThrow(NotFoundException);
+      await expect(service.crearPreferencia(1, { tipo_entrega: 'retiro' } as any)).rejects.toThrow(NotFoundException);
     });
 
     it('debe lanzar BadRequestException si el carrito está vacío', async () => {
       mockCarritoRepo.findOne.mockResolvedValue({ id_carrito: 1 });
       mockItemRepo.find.mockResolvedValue([]);
-      await expect(service.crearPreferencia(1)).rejects.toThrow(BadRequestException);
+      await expect(service.crearPreferencia(1, { tipo_entrega: 'retiro' } as any)).rejects.toThrow(BadRequestException);
     });
 
     it('debe aplicar descuento VIP, guardar la venta y retornar la URL de pago', async () => {
@@ -128,7 +136,7 @@ describe('PagoService', () => {
       });
       mockVentaRepo.save.mockResolvedValue({ id_venta: 99, precio_total: 180 });
 
-      const resultado = await service.crearPreferencia(1);
+      const resultado = await service.crearPreferencia(1, { tipo_entrega: 'retiro' } as any);
 
       expect(mockVentaRepo.save).toHaveBeenCalledWith(expect.objectContaining({ precio_total: 180 }));
       expect(mockDetalleRepo.save).toHaveBeenCalledTimes(1);

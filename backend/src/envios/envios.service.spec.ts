@@ -134,26 +134,12 @@ describe('EnviosService', () => {
       expect(res.es_predeterminada).toBe(true);
     });
 
-    it('si pide ser predeterminada, desmarca la anterior', async () => {
-      mockProvinciaRepo.findOneBy.mockResolvedValue({ id_provincia: 5 });
-      manager.count.mockResolvedValue(2);
-      manager.save.mockImplementation(async (_e: any, d: any) => d);
-
-      const res: any = await service.crearDireccion(3, { ...dtoDireccion, es_predeterminada: true } as any);
-
-      expect(manager.update).toHaveBeenCalledWith(DireccionEnvio, { id_usuario: 3, es_predeterminada: true }, { es_predeterminada: false });
-      expect(res.es_predeterminada).toBe(true);
-    });
-
-    it('una dirección adicional sin pedirlo no es predeterminada', async () => {
+    it('si el usuario ya tiene una dirección activa, rechaza con ConflictException', async () => {
       mockProvinciaRepo.findOneBy.mockResolvedValue({ id_provincia: 5 });
       manager.count.mockResolvedValue(1);
-      manager.save.mockImplementation(async (_e: any, d: any) => d);
 
-      const res: any = await service.crearDireccion(3, dtoDireccion as any);
-
-      expect(manager.update).not.toHaveBeenCalled();
-      expect(res.es_predeterminada).toBe(false);
+      await expect(service.crearDireccion(3, dtoDireccion as any)).rejects.toThrow(ConflictException);
+      expect(manager.save).not.toHaveBeenCalled();
     });
 
     it('traduce el error de BD por código postal inválido a BadRequestException', async () => {
