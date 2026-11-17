@@ -1,11 +1,11 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCarrito } from '@/context/carrito-context';
 import { CheckCircle2, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function PagoExitoPage() {
+function PagoExito() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { cargarCarrito } = useCarrito();
@@ -43,5 +43,14 @@ export default function PagoExitoPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+// useSearchParams exige un límite Suspense para poder generar la página en el build
+export default function PagoExitoPage() {
+  return (
+    <Suspense fallback={null}>
+      <PagoExito />
+    </Suspense>
   );
 }
