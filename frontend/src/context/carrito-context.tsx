@@ -65,17 +65,27 @@ export function CarritoProvider({ children }: { children: React.ReactNode }) {
     setCarrito(null);
   };
 
-  const totalItems = carrito?.items?.reduce((acc: number, i: any) => acc + i.cantidad, 0) || 0;
-const iniciarPago = async () => {
+const totalItems = carrito?.items?.reduce((acc: number, i: any) => acc + i.cantidad, 0) || 0;
+const iniciarPago = async (datosEntrega: {
+  tipo_entrega: 'domicilio' | 'retiro';
+  id_direccion?: number;
+}) => {
   if (!token) throw new Error('NO_AUTENTICADO');
+
   const res = await fetch(`${API}/pago/crear-preferencia`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(datosEntrega),
   });
+
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.message || 'ERROR_SERVIDOR');
   }
+
   const data = await res.json();
   return data.init_point as string;
 };
