@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -17,6 +17,7 @@ import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
 
 @Injectable()
 export class PagoService {
+  private readonly logger = new Logger(PagoService.name);
   private client: MercadoPagoConfig;
 
   constructor(
@@ -144,6 +145,15 @@ export class PagoService {
     // en desarrollo (localhost) lo omitimos para que no rechace la preferencia.
     const autoReturn = frontendUrl?.startsWith('https://') ? ('approved' as const) : undefined;
 
+    const notificationUrl = this.configService.get<string>('NOTIFICATION_URL') || `${backendUrl}/pago/webhook`;
+    // Sin datos sensibles: sirve para detectar variables mal configuradas en producción
+    this.logger.log(
+      `Preferencia de pago (venta ${venta.id_venta}): FRONTEND_URL=${frontendUrl} | notification_url=${notificationUrl} | auto_return=${autoReturn ?? 'no'}`,
+    );
+    if (!frontendUrl || !backendUrl) {
+      this.logger.warn('Falta FRONTEND_URL o BACKEND_PUBLIC_URL: Mercado Pago no podrá volver a la tienda ni avisar el pago');
+    }
+
     const preference = new Preference(this.client);
     const resultado = await preference.create({
       body: {
@@ -167,7 +177,7 @@ export class PagoService {
           pending: `${frontendUrl}/pago/pendiente`,
         },
         ...(autoReturn && { auto_return: autoReturn }),
-        notification_url: this.configService.get<string>('NOTIFICATION_URL') || `${backendUrl}/pago/webhook`,
+        notification_url: notificationUrl,
       },
     });
 
