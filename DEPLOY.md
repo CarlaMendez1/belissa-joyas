@@ -30,7 +30,13 @@ Nuevo "Web Service" conectado al repositorio, carpeta raíz `backend`.
   (carritos abandonados, niveles VIP) solo corren mientras está despierto.
 
 ## 3. Frontend (Vercel)
-Importar el repositorio, carpeta raíz `frontend`, y definir `NEXT_PUBLIC_API_URL` con la URL pública del backend.
+Importar el repositorio, carpeta raíz `frontend`, y definir estas variables en Settings > Environment Variables (marcadas para Production):
+- `NEXT_PUBLIC_API_URL`: URL pública del backend, con `https://` y sin barra al final. Sin ella el sitio llama a `localhost`.
+- `NEXTAUTH_SECRET`: cadena larga y aleatoria (obligatoria para el inicio de sesión).
+- `NEXTAUTH_URL`: URL pública del sitio, por ejemplo `https://belissa-joyas.vercel.app`.
+- `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`: solo si se usa el ingreso con Google. En Google Cloud hay que autorizar `https://<tu-sitio>/api/auth/callback/google`.
+
+Las variables `NEXT_PUBLIC_*` se incorporan al construir el sitio: después de cambiarlas hay que hacer Redeploy sin usar la caché de compilación.
 Después de publicarlo, copiar la URL de Vercel a `FRONTEND_URL` en Render y volver a desplegar el backend.
 
 ## 4. Mercado Pago
