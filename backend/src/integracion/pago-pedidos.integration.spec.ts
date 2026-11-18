@@ -71,6 +71,9 @@ describe('Integración - direcciones, pago y pedidos (API + base de datos)', () 
   };
 
   beforeAll(async () => {
+    // Las pruebas nunca mandan mails reales, aunque el .env local tenga el envío activado
+    process.env.EMAIL_HABILITADO = 'false';
+    delete process.env.BREVO_API_KEY;
     const moduleFixture: TestingModule = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
