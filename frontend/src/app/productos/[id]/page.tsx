@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getProducto, getVariantesPorProducto, getOpciones } from '@/lib/api';
 import { useCarrito } from '@/context/carrito-context';
+import BotonFavorito from '@/components/boton-favorito';
 import { Gem, ArrowLeft, ShoppingBag, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -199,7 +200,10 @@ const imagenes: string[] =
           <div className="flex flex-col gap-6">
             <div>
               <p className="text-xs text-cocoa-taupe font-mono mb-2">{producto.codigo_sku}</p>
-              <h1 className="text-3xl font-serif text-stone-800 mb-3">{producto.nombre}</h1>
+              <div className="mb-3 flex items-start justify-between gap-4">
+                <h1 className="text-3xl font-serif text-stone-800">{producto.nombre}</h1>
+                <BotonFavorito idProducto={Number(id)} className="shrink-0 border border-stone-200" />
+              </div>
               <p className="text-stone-500 leading-relaxed">{producto.descripcion}</p>
             </div>
 

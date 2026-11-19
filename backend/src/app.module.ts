@@ -22,6 +22,7 @@ import { DashboardModule } from './dashboard/dashboard.module.js';
 import { EnviosModule } from './envios/envios.module.js';
 import { PedidosModule } from './pedidos/pedidos.module.js';
 import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
+import { FavoritoModule } from './favorito/favorito.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -63,6 +64,7 @@ import { EstadisticasModule } from './estadisticas/estadisticas.module.js';
     EnviosModule,
     PedidosModule,
     EstadisticasModule,
+    FavoritoModule,
   ],
 })
 export class AppModule {}
