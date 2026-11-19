@@ -188,3 +188,23 @@ export type MiPedido = {
 export function getMisPedidos(token: string): Promise<MiPedido[]> {
   return pedirConToken(token, '/mis-pedidos');
 }
+
+
+export type ProductoFavorito = {
+  id_producto: number;
+  nombre: string;
+  codigo_sku: string;
+  imagenes?: string[] | null;
+};
+
+export async function getMisFavoritos(token: string): Promise<ProductoFavorito[]> {
+  const res = await fetch(`${API}/favoritos`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message || `Error ${res.status}`);
+  }
+  return res.json();
+}
