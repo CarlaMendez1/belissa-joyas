@@ -195,6 +195,11 @@ export type ProductoFavorito = {
   nombre: string;
   codigo_sku: string;
   imagenes?: string[] | null;
+  descripcion?: string | null;
+  precio_desde: number | null;
+  varios_precios: boolean;
+  disponible: boolean;
+  especificaciones: { opcion: string; valores: string[] }[];
 };
 
 export async function getMisFavoritos(token: string): Promise<ProductoFavorito[]> {

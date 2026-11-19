@@ -54,7 +54,7 @@ export default function MisFavoritosPage() {
         </button>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-6 py-12">
         <h1 className="text-2xl font-serif text-stone-800 mb-8">Mis favoritos</h1>
 
         {error && <p className="text-red-500">{error}</p>}
@@ -72,23 +72,51 @@ export default function MisFavoritosPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-4">
           {visibles.map((p) => (
             <Link key={p.id_producto} href={`/productos/${p.id_producto}`}>
-              <div className="overflow-hidden rounded-xl border border-stone-200 bg-white transition-all hover:border-dusty-rose hover:shadow-md">
-                <div className="relative aspect-square bg-blush-oat/30">
-                  <BotonFavorito idProducto={p.id_producto} className="absolute right-3 top-3 z-10" />
+              <div className="flex flex-col gap-5 overflow-hidden rounded-xl border border-stone-200 bg-white p-4 transition-all hover:border-dusty-rose hover:shadow-md sm:flex-row">
+                <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-lg bg-blush-oat/30 sm:w-44">
                   {p.imagenes?.[0] ? (
-                    <Image src={p.imagenes[0]} alt={p.nombre} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
+                    <Image src={p.imagenes[0]} alt={p.nombre} fill sizes="(max-width: 640px) 100vw, 176px" className="object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <Gem className="h-12 w-12 text-dusty-rose" />
+                      <Gem className="h-10 w-10 text-dusty-rose" />
                     </div>
                   )}
                 </div>
-                <div className="p-5">
+
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <span className="font-mono text-xs text-dusty-rose">{p.codigo_sku}</span>
-                  <h3 className="font-serif text-lg text-espresso-brown">{p.nombre}</h3>
+                  <h3 className="font-serif text-xl text-espresso-brown">{p.nombre}</h3>
+                  {p.descripcion && (
+                    <p className="line-clamp-2 text-sm leading-relaxed text-stone-500">{p.descripcion}</p>
+                  )}
+                  {p.especificaciones.length > 0 && (
+                    <dl className="mt-1 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                      {p.especificaciones.map((e) => (
+                        <div key={e.opcion} className="flex gap-2">
+                          <dt className="text-stone-400">{e.opcion}:</dt>
+                          <dd className="text-stone-700">{e.valores.join(', ')}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
+
+                <div className="flex shrink-0 flex-row items-center justify-between gap-3 sm:w-40 sm:flex-col sm:items-end sm:justify-between">
+                  <BotonFavorito idProducto={p.id_producto} className="border border-stone-200" />
+                  <div className="text-right">
+                    {p.precio_desde != null && (
+                      <p className="text-xl font-semibold text-espresso-brown">
+                        {p.varios_precios && <span className="mr-1 text-sm font-normal text-stone-400">Desde</span>}
+                        ${Math.round(p.precio_desde).toLocaleString('es-AR')}
+                      </p>
+                    )}
+                    <p className={`text-xs ${p.disponible ? 'text-green-700' : 'text-red-500'}`}>
+                      {p.disponible ? 'Disponible' : 'Sin stock'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </Link>

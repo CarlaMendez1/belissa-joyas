@@ -6,6 +6,7 @@ import { AppModule } from '../app.module';
 import { Subcategoria } from '../subcategoria/subcategoria.entity';
 import { Categoria } from '../categoria/categoria.entity';
 import { Producto } from '../producto/producto.entity';
+import { Variante } from '../variante/variante.entity';
 
 /**
  * Pruebas de integración de favoritos con base de datos real.
@@ -37,6 +38,9 @@ describe('Integración - favoritos (API + base de datos)', () => {
       ds.getRepository(Producto).create({ id_subcategoria: sub.id_subcategoria, codigo_sku: `FAV-${sufijo}`, nombre: 'Anillo favorito' } as any),
     ) as any;
     idProducto = prod.id_producto;
+    await ds.getRepository(Variante).save(
+      ds.getRepository(Variante).create({ id_producto: idProducto, codigo_sku: `FAV-V-${sufijo}`, precio_venta: 48900, stock_disponible: 3 } as any),
+    );
 
     const a = await http().post('/auth/registro').send({ nombre: 'Lucía', apellido: 'Paz', email: `lucia.${sufijo}@belissa.com`, password }).expect(201);
     token = a.body.access_token;
@@ -57,6 +61,10 @@ describe('Integración - favoritos (API + base de datos)', () => {
     await http().post(`/favoritos/${idProducto}`).set(auth(token)).expect(201);
     const lista = await http().get('/favoritos').set(auth(token)).expect(200);
     expect(lista.body.map((p: any) => p.id_producto)).toContain(idProducto);
+    const fav = lista.body.find((p: any) => p.id_producto === idProducto);
+    expect(fav.precio_desde).toBe(48900);
+    expect(fav.disponible).toBe(true);
+    expect(Array.isArray(fav.especificaciones)).toBe(true);
     const ids = await http().get('/favoritos/ids').set(auth(token)).expect(200);
     expect(ids.body).toContain(idProducto);
   });
