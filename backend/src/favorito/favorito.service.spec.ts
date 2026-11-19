@@ -14,6 +14,7 @@ describe('FavoritoService', () => {
     create: jest.fn((x) => x),
     save: jest.fn(),
     delete: jest.fn(),
+    manager: { query: jest.fn() },
   };
   const productoRepo = { findOneBy: jest.fn() };
 
@@ -67,14 +68,50 @@ describe('FavoritoService', () => {
   });
 
   describe('listar', () => {
-    it('devuelve solo productos activos con sus datos', async () => {
+    it('devuelve solo productos activos con precio, disponibilidad y características', async () => {
       favoritoRepo.find.mockResolvedValue([
-        { fecha_alta: new Date('2026-11-02'), producto: { id_producto: 2, nombre: 'Anillo', codigo_sku: 'AN-1', imagenes: ['a.jpg'], estado: EstadoProducto.ACTIVO } },
-        { fecha_alta: new Date('2026-11-01'), producto: { id_producto: 3, nombre: 'Collar', codigo_sku: 'CO-1', imagenes: [], estado: EstadoProducto.INACTIVO } },
+        { id_producto: 2, fecha_alta: new Date('2026-11-02'), producto: { id_producto: 2, nombre: 'Anillo', codigo_sku: 'AN-1', descripcion: 'Anillo de compromiso', imagenes: ['a.jpg'], estado: EstadoProducto.ACTIVO } },
+        { id_producto: 3, fecha_alta: new Date('2026-11-01'), producto: { id_producto: 3, nombre: 'Collar', codigo_sku: 'CO-1', imagenes: [], estado: EstadoProducto.INACTIVO } },
       ]);
+      favoritoRepo.manager.query
+        .mockResolvedValueOnce([{ id_producto: 2, precio_desde: '48900.00', precios_distintos: '2', stock_total: '5' }])
+        .mockResolvedValueOnce([
+          { id_producto: 2, opcion: 'Material', unidad: null, valor: 'Oro 18k' },
+          { id_producto: 2, opcion: 'Material', unidad: null, valor: 'Plata' },
+          { id_producto: 2, opcion: 'Largo', unidad: 'cm', valor: '45' },
+        ]);
       const res = await service.listar(1);
       expect(res).toHaveLength(1);
-      expect(res[0]).toMatchObject({ id_producto: 2, nombre: 'Anillo', codigo_sku: 'AN-1' });
+      expect(res[0]).toMatchObject({
+        id_producto: 2,
+        nombre: 'Anillo',
+        descripcion: 'Anillo de compromiso',
+        precio_desde: 48900,
+        varios_precios: true,
+        disponible: true,
+        especificaciones: [
+          { opcion: 'Material', valores: ['Oro 18k', 'Plata'] },
+          { opcion: 'Largo', valores: ['45 cm'] },
+        ],
+      });
+    });
+
+    it('marca como no disponible un producto sin stock', async () => {
+      favoritoRepo.find.mockResolvedValue([
+        { id_producto: 2, fecha_alta: new Date(), producto: { id_producto: 2, nombre: 'Anillo', codigo_sku: 'AN-1', estado: EstadoProducto.ACTIVO } },
+      ]);
+      favoritoRepo.manager.query
+        .mockResolvedValueOnce([{ id_producto: 2, precio_desde: '1000', precios_distintos: '1', stock_total: '0' }])
+        .mockResolvedValueOnce([]);
+      const res = await service.listar(1);
+      expect(res[0].disponible).toBe(false);
+      expect(res[0].varios_precios).toBe(false);
+    });
+
+    it('con lista vacía no consulta variantes', async () => {
+      favoritoRepo.find.mockResolvedValue([]);
+      expect(await service.listar(1)).toEqual([]);
+      expect(favoritoRepo.manager.query).not.toHaveBeenCalled();
     });
   });
 
