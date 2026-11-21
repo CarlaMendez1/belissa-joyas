@@ -17,6 +17,8 @@ const FUENTE = "Georgia, 'Times New Roman', serif";
 export interface DatoCorreo {
   etiqueta: string;
   valor: string;
+  /** Resalta la fila (por ejemplo, el total). */
+  destacado?: boolean;
 }
 
 export interface OpcionesCorreo {
@@ -26,7 +28,7 @@ export interface OpcionesCorreo {
   /** Filas "etiqueta / valor" (por ejemplo: transportista, seguimiento). */
   datos?: DatoCorreo[];
   /** Filas de producto: nombre a la izquierda, cantidad a la derecha. */
-  productos?: { nombre: string; cantidad: number }[];
+  productos?: { nombre: string; cantidad: number; importe?: string }[];
   boton?: { texto: string; url: string };
   pie?: string;
 }
@@ -50,21 +52,23 @@ export function armarCorreoHtml(op: OpcionesCorreo): string {
     )
     .join('');
 
-  const filas = (contenidoIzq: string, contenidoDer: string) => `
+  const filas = (contenidoIzq: string, contenidoDer: string, destacado = false) => `
         <tr>
-          <td style="padding: 12px 0; border-bottom: 1px solid ${c.blushOat}; color: ${c.cocoaTaupe}; font-size: 14px;">${contenidoIzq}</td>
-          <td style="padding: 12px 0; border-bottom: 1px solid ${c.blushOat}; color: ${c.espressoBrown}; font-size: 14px; text-align: right;">${contenidoDer}</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid ${c.blushOat}; color: ${destacado ? c.espressoBrown : c.cocoaTaupe}; font-size: 14px;${destacado ? ' font-weight: bold;' : ''}">${contenidoIzq}</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid ${c.blushOat}; color: ${c.espressoBrown}; font-size: 14px; text-align: right;${destacado ? ' font-weight: bold;' : ''}">${contenidoDer}</td>
         </tr>`;
 
   const tablaDatos = op.datos?.length
     ? `<table style="width: 100%; border-collapse: collapse; margin: 0 0 24px;">${op.datos
-        .map((d) => filas(escaparHtml(d.etiqueta), escaparHtml(d.valor)))
+        .map((d) => filas(escaparHtml(d.etiqueta), escaparHtml(d.valor), d.destacado))
         .join('')}</table>`
     : '';
 
   const tablaProductos = op.productos?.length
     ? `<table style="width: 100%; border-collapse: collapse; margin: 0 0 24px;">${op.productos
-        .map((p) => filas(escaparHtml(p.nombre), `x${p.cantidad}`))
+        .map((p) =>
+          filas(escaparHtml(p.nombre), escaparHtml(p.importe ? `x${p.cantidad} · ${p.importe}` : `x${p.cantidad}`)),
+        )
         .join('')}</table>`
     : '';
 
@@ -90,8 +94,8 @@ export function armarCorreoHtml(op: OpcionesCorreo): string {
         <div style="padding: 28px 24px;">
           <p style="color: ${c.espressoBrown}; font-size: 15px; margin: 0 0 16px;">${escaparHtml(op.saludo)}</p>
           ${parrafos}
-          ${tablaDatos}
           ${tablaProductos}
+          ${tablaDatos}
           ${boton}
           ${pie}
         </div>
