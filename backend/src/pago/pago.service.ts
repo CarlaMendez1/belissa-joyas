@@ -298,30 +298,57 @@ export class PagoService {
         relations: { variante: { producto: true } },
       });
 
-      const pesos = (n: number) => `$${n.toLocaleString('es-AR')}`;
-      const productos = detalles.map((d) => ({
-        nombre: d.variante?.producto?.nombre || d.sku_snapshot,
-        cantidad: d.cantidad,
-      }));
-      const total = Number(venta.precio_total) + Number(venta.costo_envio || 0);
+      // El pedido guarda los precios ya con descuento; los de lista siguen en el
+      // carrito, que queda asociado a la venta. Con eso se muestra el descuento aplicado.
+      const itemsCarrito = venta.id_carrito
+        ? await this.itemRepo.find({ where: { id_carrito: venta.id_carrito } })
+        : [];
+      const precioLista = new Map(itemsCarrito.map((i) => [i.id_variante, Number(i.precio_unitario)]));
+
+      const pesos = (n: number) =>
+        `$${n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+
+      const lineas = detalles.map((d) => {
+        const lista = precioLista.get(d.id_variante) ?? Number(d.precio_unitario);
+        return {
+          nombre: d.variante?.producto?.nombre || d.sku_snapshot,
+          cantidad: d.cantidad,
+          importe: lista * d.cantidad,
+        };
+      });
+      const subtotalLista = lineas.reduce((acc, l) => acc + l.importe, 0);
+      const subtotal = Number(venta.precio_total);
+      const descuento = Math.round((subtotalLista - subtotal) * 100) / 100;
+      const porcentaje = subtotalLista > 0 ? Math.round((descuento / subtotalLista) * 100) : 0;
+      const costoEnvio = Number(venta.costo_envio || 0);
+      const total = subtotal + costoEnvio;
+
+      const productos = lineas.map((l) => ({ ...l, importe: pesos(l.importe) }));
       const aDomicilio = venta.tipo_entrega === 'domicilio';
-      const entrega = aDomicilio
-        ? `Envío a domicilio: ${venta.envio_calle} ${venta.envio_numero}, ${venta.envio_localidad}, ${venta.envio_provincia}`
-        : 'Retiro en el local';
+      const direccion = `${venta.envio_calle} ${venta.envio_numero}, ${venta.envio_localidad}, ${venta.envio_provincia}`;
+      const entrega = aDomicilio ? `Envío a domicilio: ${direccion}` : 'Retiro en el local';
+      const costoEnvioTexto = costoEnvio > 0 ? pesos(costoEnvio) : 'Gratis';
       const siguiente = aDomicilio
         ? 'Te avisaremos por correo cuando despachemos tu pedido.'
         : 'Te avisaremos por correo cuando tu pedido esté listo para retirar.';
       const nombre = venta.usuario.nombre;
+      const hayDescuento = descuento > 0.005;
 
       const texto = [
         `Hola ${nombre}!`,
         '',
         `Recibimos tu pago. Tu pedido #${id_venta} está confirmado.`,
         '',
-        ...productos.map((p) => `- ${p.nombre} x${p.cantidad}`),
+        'Detalle de tu compra:',
+        ...productos.map((p) => `- ${p.nombre} x${p.cantidad}: ${p.importe}`),
+        '',
+        ...(hayDescuento
+          ? [`Subtotal: ${pesos(subtotalLista)}`, `Descuento VIP (${porcentaje}%): -${pesos(descuento)}`]
+          : [`Subtotal: ${pesos(subtotal)}`]),
+        `Envío: ${costoEnvioTexto}`,
+        `Total pagado: ${pesos(total)}`,
         '',
         `Entrega: ${entrega}`,
-        `Total pagado: ${pesos(total)}`,
         '',
         siguiente,
         'Gracias por elegir Belissa Joyas.',
@@ -329,13 +356,21 @@ export class PagoService {
 
       const html = armarCorreoHtml({
         saludo: `Hola ${nombre}!`,
-        parrafos: [`Recibimos tu pago. Tu pedido #${id_venta} está confirmado.`, siguiente],
+        parrafos: [`Recibimos tu pago. Tu pedido #${id_venta} está confirmado.`, 'Este es el detalle de tu compra:'],
         productos,
         datos: [
-          { etiqueta: 'Entrega', valor: entrega.replace(/^Envío a domicilio: /, '') },
-          { etiqueta: 'Total pagado', valor: pesos(total) },
+          ...(hayDescuento
+            ? [
+                { etiqueta: 'Subtotal', valor: pesos(subtotalLista) },
+                { etiqueta: `Descuento VIP (${porcentaje}%)`, valor: `-${pesos(descuento)}` },
+              ]
+            : [{ etiqueta: 'Subtotal', valor: pesos(subtotal) }]),
+          { etiqueta: 'Envío', valor: costoEnvioTexto },
+          { etiqueta: 'Total pagado', valor: pesos(total), destacado: true },
+          { etiqueta: 'Entrega', valor: aDomicilio ? direccion : 'Retiro en el local' },
         ],
-        pie: 'Gracias por elegir Belissa Joyas.',
+        // `siguiente` va como último párrafo para que lo último que se lea sea qué pasa ahora
+        pie: `${siguiente} Gracias por elegir Belissa Joyas.`,
       });
 
       const enviado = await this.emailService.enviar(
