@@ -94,8 +94,8 @@ export function armarCorreoHtml(op: OpcionesCorreo): string {
         <div style="padding: 28px 24px;">
           <p style="color: ${c.espressoBrown}; font-size: 15px; margin: 0 0 16px;">${escaparHtml(op.saludo)}</p>
           ${parrafos}
-          ${tablaDatos}
           ${tablaProductos}
+          ${tablaDatos}
           ${boton}
           ${pie}
         </div>
