@@ -12,3 +12,22 @@ export const producto = {
   descripcion: 'Anillo de oro con circonia, ideal para regalar.',
   precio: 48900,
 };
+
+/** Producto para las pruebas de compra: tiene su propio stock para poder medir el descuento. */
+export const collar = {
+  nombre: `Collar Luna ${sufijo}`,
+  sku: `E2E-C-${sufijo}`,
+  precio: 20000,
+  stockInicial: 5,
+};
+
+export const envioCordoba = 5800;
+export const direccion = {
+  destinatario: 'Lucía Paz',
+  telefono: '3511234567',
+  calle: 'Belgrano',
+  numero: '123',
+  localidad: 'Córdoba',
+  provincia: 'Córdoba',
+  codigoPostal: '5000',
+};

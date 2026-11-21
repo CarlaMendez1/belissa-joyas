@@ -1,5 +1,5 @@
 import { Client } from 'pg';
-import { admin, clienta, otraClienta, password, producto, sufijo } from './datos';
+import { admin, clienta, collar, envioCordoba, otraClienta, password, producto, sufijo } from './datos';
 
 const API = 'http://localhost:3001';
 
@@ -53,6 +53,34 @@ export default async function globalSetup() {
       vari.rows[0].id_variante,
       car.rows[0].id_caracteristica,
     ]);
+    // Producto para las pruebas de compra
+    const prod2 = await db.query(
+      `INSERT INTO producto (id_subcategoria, codigo_sku, nombre) VALUES ($1, $2, $3) RETURNING id_producto`,
+      [sub.rows[0].id_subcategoria, collar.sku, collar.nombre],
+    );
+    await db.query(
+      `INSERT INTO variante (id_producto, codigo_sku, precio_venta, stock_disponible) VALUES ($1, $2, $3, $4)`,
+      [prod2.rows[0].id_producto, `${collar.sku}-V1`, collar.precio, collar.stockInicial],
+    );
+
+    // Envío: provincia con tarifa activa, y retiro en local habilitado
+    let prov = await db.query(`SELECT id_provincia FROM provincia WHERE nombre = 'Córdoba'`);
+    if (!prov.rows.length) prov = await db.query(`INSERT INTO provincia (nombre) VALUES ('Córdoba') RETURNING id_provincia`);
+    await db.query(`DELETE FROM tarifa_envio WHERE id_provincia = $1`, [prov.rows[0].id_provincia]);
+    await db.query(`INSERT INTO tarifa_envio (id_provincia, precio, plazo_dias, activa) VALUES ($1, $2, 3, true)`, [
+      prov.rows[0].id_provincia,
+      envioCordoba,
+    ]);
+    for (const [clave, valor] of [
+      ['retiro_local_activo', 'true'],
+      ['retiro_local_direccion', 'Av. Colón 100, Córdoba'],
+      ['envio_gratis_desde', '0'],
+    ]) {
+      await db.query(
+        `INSERT INTO configuracion (clave, valor) VALUES ($1, $2) ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
+        [clave, valor],
+      );
+    }
     process.env.E2E_MATERIAL = `Material E2E ${sufijo}`;
   } finally {
     await db.end();
