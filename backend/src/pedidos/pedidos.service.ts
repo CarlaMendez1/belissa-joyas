@@ -6,6 +6,7 @@ import { DetalleVenta } from '../venta/detalle-venta.entity.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
 import { EmailService } from '../email/email.service.js';
+import { armarCorreoHtml } from '../email/plantilla-email.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { normalizarTexto, traducirErrorBD } from '../common/db-errors.js';
 import { tomar } from '../common/auditoria-utils.js';
@@ -286,7 +287,20 @@ export class PedidosService {
         '',
         'Gracias por elegir Belissa Joyas.',
       ].filter((l, i, arr) => l !== '' || arr[i - 1] !== '');
-      await this.emailService.enviar(email, `Tu pedido #${venta.id_venta} está en camino`, lineas.join('\n'));
+      const html = armarCorreoHtml({
+        saludo: `Hola ${nombre}!`,
+        parrafos: [`Tu pedido #${venta.id_venta} ya fue despachado.`],
+        datos: [
+          ...(venta.transportista ? [{ etiqueta: 'Transportista', valor: venta.transportista }] : []),
+          ...(venta.numero_seguimiento ? [{ etiqueta: 'Número de seguimiento', valor: venta.numero_seguimiento }] : []),
+          {
+            etiqueta: 'Destino',
+            valor: `${venta.envio_calle} ${venta.envio_numero}, ${venta.envio_localidad}, ${venta.envio_provincia}`,
+          },
+        ],
+        pie: 'Gracias por elegir Belissa Joyas.',
+      });
+      await this.emailService.enviar(email, `Tu pedido #${venta.id_venta} está en camino`, lineas.join('\n'), html);
       return;
     }
 
@@ -305,7 +319,13 @@ export class PedidosService {
         '',
         'Gracias por elegir Belissa Joyas.',
       ].filter((l, i, arr) => l !== '' || arr[i - 1] !== '');
-      await this.emailService.enviar(email, `Tu pedido #${venta.id_venta} está listo para retirar`, lineas.join('\n'));
+      const html = armarCorreoHtml({
+        saludo: `Hola ${nombre}!`,
+        parrafos: [`Tu pedido #${venta.id_venta} ya está listo para retirar.`],
+        datos: direccion ? [{ etiqueta: 'Dónde y cuándo', valor: direccion }] : [],
+        pie: 'Gracias por elegir Belissa Joyas.',
+      });
+      await this.emailService.enviar(email, `Tu pedido #${venta.id_venta} está listo para retirar`, lineas.join('\n'), html);
     }
   }
 }

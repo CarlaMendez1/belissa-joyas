@@ -59,6 +59,9 @@ describe('PedidosService', () => {
     expect(email.enviar).toHaveBeenCalledTimes(1);
     expect(email.enviar.mock.calls[0][0]).toBe('ana@mail.com');
     expect(email.enviar.mock.calls[0][2]).toContain('AB123');
+    // El mismo correo sale también con el formato HTML de la tienda
+    expect(email.enviar.mock.calls[0][3]).toContain('AB123');
+    expect(email.enviar.mock.calls[0][3]).toContain('#3B2F2A');
     expect(r.estado_envio).toBe('despachado');
   });
 
@@ -86,6 +89,8 @@ describe('PedidosService', () => {
 
     expect(email.enviar).toHaveBeenCalledTimes(1);
     expect(email.enviar.mock.calls[0][2]).toContain('Calle 123');
+    expect(email.enviar.mock.calls[0][3]).toContain('Calle 123');
+    expect(email.enviar.mock.calls[0][3]).toContain('#3B2F2A');
   });
 
   it('un retiro no puede pasar a despachado', async () => {
