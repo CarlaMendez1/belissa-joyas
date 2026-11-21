@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
 
 /**
  * Pruebas de punta a punta: levantan el backend (NestJS) y el frontend (Next.js)
@@ -41,7 +42,17 @@ export default defineConfig({
       url: 'http://localhost:3001/categorias',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
-      env: { ...db, JWT_SECRET: 'e2e-secret', EMAIL_HABILITADO: 'false', BREVO_API_KEY: '' } as Record<string, string>,
+      env: {
+        ...db,
+        JWT_SECRET: 'e2e-secret',
+        EMAIL_HABILITADO: 'false',
+        BREVO_API_KEY: '',
+        MP_ACCESS_TOKEN: 'simulado',
+        FRONTEND_URL: 'http://localhost:3000',
+        BACKEND_PUBLIC_URL: 'http://localhost:3001',
+        // Mercado Pago simulado: nunca se cobra de verdad
+        NODE_OPTIONS: `--require ${path.resolve(__dirname, 'e2e/mp-simulado.cjs')}`,
+      } as Record<string, string>,
     },
     {
       command: 'npm run dev -- -p 3000',
