@@ -11,6 +11,8 @@ import { PagoController } from './pago.controller.js';
 import { ClienteVipModule } from '../cliente-vip/cliente-vip.module.js';
 import { AuditoriaModule } from '../auditoria/auditoria.module.js';
 import { EnviosModule } from '../envios/envios.module.js';
+import { EmailModule } from '../email/email.module.js';
+import { NotificacionModule } from '../notificacion/notificacion.module.js';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { EnviosModule } from '../envios/envios.module.js';
     ClienteVipModule,
     AuditoriaModule,
     EnviosModule,
+    EmailModule,
+    NotificacionModule,
   ],
   providers: [PagoService],
   controllers: [PagoController],

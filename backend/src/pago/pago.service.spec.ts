@@ -12,6 +12,8 @@ import { DetalleVenta } from '../venta/detalle-venta.entity';
 import { Pago, EstadoPago } from './pago.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { EmailService } from '../email/email.service';
+import { NotificacionService } from '../notificacion/notificacion.service';
 
 // 1. Mocks de la SDK de Mercado Pago
 // Declaramos la función AFUERA para que el test y el servicio compartan la misma instancia
@@ -52,12 +54,15 @@ describe('PagoService', () => {
   const mockItemRepo = { find: jest.fn() };
   const mockVarianteRepo = {};
   const mockVentaRepo = {
+    findOne: jest.fn(),
     save: jest.fn(),
     update: jest.fn(),
     findOneBy: jest.fn(),
     manager: { connection: mockConnection },
   };
-  const mockDetalleRepo = { save: jest.fn() };
+  const mockDetalleRepo = { save: jest.fn(), find: jest.fn() };
+  const mockEmailService = { enviar: jest.fn() };
+  const mockNotificacionService = { registrar: jest.fn() };
   const mockPagoRepo = {
     save: jest.fn(),
     createQueryBuilder: jest.fn().mockReturnValue({
@@ -104,6 +109,8 @@ describe('PagoService', () => {
         },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: AuditoriaService, useValue: { registrar: jest.fn().mockResolvedValue({}) } },
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: NotificacionService, useValue: mockNotificacionService },
       ],
     }).compile();
 
@@ -111,7 +118,9 @@ describe('PagoService', () => {
     
     // Limpiamos todos los mocks antes de cada prueba
     jest.clearAllMocks();
-    mockPaymentGet.mockClear(); 
+    mockPaymentGet.mockClear();
+    mockEmailService.enviar.mockResolvedValue(true);
+    mockNotificacionService.registrar.mockResolvedValue({});
   });
 
   describe('crearPreferencia()', () => {
@@ -189,6 +198,76 @@ describe('PagoService', () => {
         expect.objectContaining({ stock_descontado: true })
       );
       expect(mockClienteVipService.recalcularNivel).not.toHaveBeenCalled();
+    });
+
+    describe('correo de confirmación de compra', () => {
+      const ventaConUsuario = {
+        id_venta: 99,
+        id_usuario: 1,
+        precio_total: '20000',
+        costo_envio: '5800',
+        tipo_entrega: 'domicilio',
+        envio_calle: 'Belgrano',
+        envio_numero: '123',
+        envio_localidad: 'Córdoba',
+        envio_provincia: 'Córdoba',
+        usuario: { nombre: 'Lucía', email: 'lucia@mail.com' },
+      };
+
+      beforeEach(() => {
+        mockPaymentGet.mockResolvedValue({ external_reference: '99', status: 'approved' });
+        mockVentaRepo.findOneBy.mockResolvedValue({ id_venta: 99, id_usuario: 1 });
+        mockVentaRepo.findOne.mockResolvedValue(ventaConUsuario);
+        mockDetalleRepo.find.mockResolvedValue([
+          { sku_snapshot: 'COL-1', cantidad: 1, variante: { producto: { nombre: 'Collar Luna' } } },
+        ]);
+      });
+
+      it('avisa a la clienta con el pedido, la entrega y el total pagado', async () => {
+        mockManager.findOne.mockResolvedValue({ id_venta: 99, stock_descontado: false, id_carrito: 1 });
+        mockManager.find.mockResolvedValue([{ id_variante: 10, cantidad: 1 }]);
+
+        await service.procesarWebhook({ type: 'payment', 'data.id': '123' }, {});
+
+        expect(mockEmailService.enviar).toHaveBeenCalledTimes(1);
+        const [destino, asunto, texto, html] = mockEmailService.enviar.mock.calls[0];
+        expect(destino).toBe('lucia@mail.com');
+        expect(asunto).toContain('#99');
+        expect(texto).toContain('Collar Luna x1');
+        expect(texto).toContain('Belgrano 123');
+        expect(texto).toContain('25.800');
+        expect(html).toContain('#3B2F2A');
+        expect(mockNotificacionService.registrar).toHaveBeenCalledWith(
+          expect.objectContaining({ id_venta: 99, estado_entrega: 'enviado' }),
+        );
+      });
+
+      it('no repite el correo si el aviso de pago llega duplicado', async () => {
+        mockManager.findOne.mockResolvedValue({ id_venta: 99, stock_descontado: true });
+
+        await service.procesarWebhook({ type: 'payment', 'data.id': '123' }, {});
+
+        expect(mockEmailService.enviar).not.toHaveBeenCalled();
+      });
+
+      it('no manda correo si el pago es rechazado', async () => {
+        mockPaymentGet.mockResolvedValue({ external_reference: '99', status: 'rejected' });
+        mockVentaRepo.findOneBy.mockResolvedValue({ id_venta: 99, estado_compra: EstadoCompra.PENDIENTE });
+
+        await service.procesarWebhook({ type: 'payment', 'data.id': '123' }, {});
+
+        expect(mockEmailService.enviar).not.toHaveBeenCalled();
+      });
+
+      it('si el correo falla, el pago igual queda confirmado y se recalcula el nivel VIP', async () => {
+        mockManager.findOne.mockResolvedValue({ id_venta: 99, stock_descontado: false, id_carrito: 1 });
+        mockManager.find.mockResolvedValue([{ id_variante: 10, cantidad: 1 }]);
+        mockEmailService.enviar.mockRejectedValue(new Error('Brevo caído'));
+
+        await expect(service.procesarWebhook({ type: 'payment', 'data.id': '123' }, {})).resolves.toEqual({ recibido: true });
+
+        expect(mockClienteVipService.recalcularNivel).toHaveBeenCalledWith(1);
+      });
     });
   });
 });

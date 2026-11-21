@@ -14,6 +14,10 @@ import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { EnviosService } from '../envios/envios.service.js';
 import { CrearPreferenciaDto } from './dto/crear-preferencia.dto.js';
 import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
+import { EmailService } from '../email/email.service.js';
+import { armarCorreoHtml } from '../email/plantilla-email.js';
+import { NotificacionService } from '../notificacion/notificacion.service.js';
+import { TipoNotificacion, EstadoNotificacion } from '../notificacion/notificacion.entity.js';
 
 @Injectable()
 export class PagoService {
@@ -31,6 +35,8 @@ export class PagoService {
     private readonly configService: ConfigService,
     private readonly auditoriaService: AuditoriaService,
     private readonly enviosService: EnviosService,
+    private readonly emailService: EmailService,
+    private readonly notificacionService: NotificacionService,
   ) {
     this.client = new MercadoPagoConfig({
       accessToken: this.configService.get<string>('MP_ACCESS_TOKEN')!,
@@ -261,6 +267,9 @@ export class PagoService {
     // fue la que realmente descontó el stock (evita duplicar el recálculo
     // y evita que recalcularNivel interfiera con los locks de la transacción).
     if (seDescontoAhora) {
+      // Primero avisamos de la compra (el aviso de nivel VIP, si corresponde, sale después)
+      await this.enviarConfirmacionCompra(id_venta);
+
       const venta = await this.ventaRepo.findOneBy({ id_venta });
       if (venta?.id_usuario) {
         try {
@@ -272,6 +281,80 @@ export class PagoService {
     }
 
     return { recibido: true };
+  }
+
+  // Correo de "Recibimos tu pago". Nunca debe romper el webhook: si falla, solo se registra.
+  private async enviarConfirmacionCompra(id_venta: number): Promise<void> {
+    try {
+      const venta = await this.ventaRepo.findOne({
+        where: { id_venta },
+        relations: { usuario: true },
+      });
+      const email = venta?.usuario?.email;
+      if (!venta || !email) return;
+
+      const detalles = await this.detalleRepo.find({
+        where: { id_venta },
+        relations: { variante: { producto: true } },
+      });
+
+      const pesos = (n: number) => `$${n.toLocaleString('es-AR')}`;
+      const productos = detalles.map((d) => ({
+        nombre: d.variante?.producto?.nombre || d.sku_snapshot,
+        cantidad: d.cantidad,
+      }));
+      const total = Number(venta.precio_total) + Number(venta.costo_envio || 0);
+      const aDomicilio = venta.tipo_entrega === 'domicilio';
+      const entrega = aDomicilio
+        ? `Envío a domicilio: ${venta.envio_calle} ${venta.envio_numero}, ${venta.envio_localidad}, ${venta.envio_provincia}`
+        : 'Retiro en el local';
+      const siguiente = aDomicilio
+        ? 'Te avisaremos por correo cuando despachemos tu pedido.'
+        : 'Te avisaremos por correo cuando tu pedido esté listo para retirar.';
+      const nombre = venta.usuario.nombre;
+
+      const texto = [
+        `Hola ${nombre}!`,
+        '',
+        `Recibimos tu pago. Tu pedido #${id_venta} está confirmado.`,
+        '',
+        ...productos.map((p) => `- ${p.nombre} x${p.cantidad}`),
+        '',
+        `Entrega: ${entrega}`,
+        `Total pagado: ${pesos(total)}`,
+        '',
+        siguiente,
+        'Gracias por elegir Belissa Joyas.',
+      ].join('\n');
+
+      const html = armarCorreoHtml({
+        saludo: `Hola ${nombre}!`,
+        parrafos: [`Recibimos tu pago. Tu pedido #${id_venta} está confirmado.`, siguiente],
+        productos,
+        datos: [
+          { etiqueta: 'Entrega', valor: entrega.replace(/^Envío a domicilio: /, '') },
+          { etiqueta: 'Total pagado', valor: pesos(total) },
+        ],
+        pie: 'Gracias por elegir Belissa Joyas.',
+      });
+
+      const enviado = await this.emailService.enviar(
+        email,
+        `Recibimos tu pago - Pedido #${id_venta}`,
+        texto,
+        html,
+      );
+
+      await this.notificacionService.registrar({
+        id_usuario: venta.id_usuario,
+        id_venta,
+        tipo: TipoNotificacion.ESTADO_PAGO,
+        contenido: texto,
+        estado_entrega: enviado ? EstadoNotificacion.ENVIADO : EstadoNotificacion.FALLIDO,
+      });
+    } catch (e) {
+      this.logger.error(`No se pudo enviar el correo de confirmación del pedido #${id_venta}`, e as Error);
+    }
   }
 
   // Descuenta stock y confirma la venta de forma atómica, protegida por
