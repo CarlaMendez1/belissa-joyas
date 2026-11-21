@@ -36,7 +36,7 @@ function PagoExito() {
         )}
         <Button
           onClick={() => router.push('/')}
-          className="w-full mt-4 bg-amber-700 hover:bg-amber-800 text-white rounded-full flex items-center justify-center gap-2"
+          className="w-full mt-4 bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full flex items-center justify-center gap-2"
         >
           <ShoppingBag className="w-4 h-4" />
           Volver al catálogo

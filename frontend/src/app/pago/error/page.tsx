@@ -18,7 +18,7 @@ export default function PagoErrorPage() {
         </p>
         <Button
           onClick={() => router.push('/')}
-          className="w-full mt-4 bg-amber-700 hover:bg-amber-800 text-white rounded-full"
+          className="w-full mt-4 bg-cocoa-taupe hover:bg-espresso-brown text-white rounded-full"
         >
           Volver al catálogo
         </Button>
