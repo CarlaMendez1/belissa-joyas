@@ -9,6 +9,7 @@ import { ConfiguracionService } from '../configuracion/configuracion.service.js'
 import { NotificacionService } from '../notificacion/notificacion.service.js';
 import { TipoNotificacion, EstadoNotificacion } from '../notificacion/notificacion.entity.js';
 import { EmailService } from '../email/email.service.js';
+import { armarCorreoHtml } from '../email/plantilla-email.js';
 import { ClienteVipService } from '../cliente-vip/cliente-vip.service.js';
 
 @Injectable()
@@ -73,51 +74,16 @@ ${listaProductosTexto}
 
 Volvé a la tienda acá: ${frontendUrl}`;
 
-      const filasProductosHtml = items
-        .map(
-          (i) => `
-            <tr>
-              <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #44403c; font-size: 14px;">
-                ${i.variante?.producto?.nombre || i.variante?.codigo_sku}
-              </td>
-              <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #78716c; font-size: 14px; text-align: right;">
-                x${i.cantidad}
-              </td>
-            </tr>`
-        )
-        .join('');
-
-      const html = `
-        <div style="font-family: Georgia, 'Times New Roman', serif; background-color: #fafaf9; padding: 32px 16px;">
-          <div style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e7e5e4;">
-            <div style="background: linear-gradient(135deg, #b45309, #92400e); padding: 28px 24px; text-align: center;">
-              <h1 style="color: #ffffff; font-size: 22px; margin: 0; font-weight: normal; letter-spacing: 0.5px;">
-                Belissa Joyas
-              </h1>
-            </div>
-            <div style="padding: 28px 24px;">
-              <p style="color: #44403c; font-size: 15px; margin: 0 0 16px;">
-                Hola ${nombreCliente},
-              </p>
-              <p style="color: #57534e; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
-                Notamos que dejaste estos productos esperándote en tu carrito. ¡Todavía están disponibles!
-              </p>
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-                ${filasProductosHtml}
-              </table>
-              <div style="text-align: center; margin: 28px 0 8px;">
-                <a href="${frontendUrl}"
-                   style="background-color: #b45309; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 999px; font-size: 14px; display: inline-block;">
-                  Volver a la tienda
-                </a>
-              </div>
-              <p style="color: #a8a29e; font-size: 12px; text-align: center; margin: 20px 0 0;">
-                Completá tu compra antes de que se agoten.
-              </p>
-            </div>
-          </div>
-        </div>
-      `;
+      const html = armarCorreoHtml({
+        saludo: `Hola ${nombreCliente},`,
+        parrafos: ['Notamos que dejaste estos productos esperándote en tu carrito. ¡Todavía están disponibles!'],
+        productos: items.map((i) => ({
+          nombre: i.variante?.producto?.nombre || i.variante?.codigo_sku || '',
+          cantidad: i.cantidad,
+        })),
+        boton: { texto: 'Volver a la tienda', url: frontendUrl || '' },
+        pie: 'Completá tu compra antes de que se agoten.',
+      });
 
       const enviado = await this.emailService.enviar(
         carrito.usuario?.email || '',

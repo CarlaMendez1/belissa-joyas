@@ -7,6 +7,7 @@ import { NivelVip } from '../nivel-vip/nivel-vip.entity.js';
 import { Venta, EstadoCompra } from '../venta/venta.entity.js';
 import { NotificacionService } from '../notificacion/notificacion.service.js';
 import { EmailService } from '../email/email.service.js';
+import { armarCorreoHtml } from '../email/plantilla-email.js';
 import { TipoNotificacion, EstadoNotificacion } from '../notificacion/notificacion.entity.js';
 import { Usuario } from '../usuario/usuario.entity.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
@@ -118,10 +119,20 @@ ${nivelNuevo.beneficios || `${nivelNuevo.porcentaje_descuento}% de descuento en 
 
 ¡Gracias por elegirnos!`;
 
+    const html = armarCorreoHtml({
+      saludo: `Hola ${usuario.nombre},`,
+      parrafos: [
+        `${esRecalculo ? 'Tu nivel de fidelidad cambió.' : '¡Bienvenido/a a nuestro programa de fidelidad!'} Ahora sos nivel ${nivelNuevo.nombre_nivel} en Belissa Joyas.`,
+        `Beneficios de tu nuevo nivel: ${nivelNuevo.beneficios || `${nivelNuevo.porcentaje_descuento}% de descuento en tus compras`}`,
+      ],
+      pie: '¡Gracias por elegirnos!',
+    });
+
     const enviado = await this.emailService.enviar(
       usuario.email,
       `¡Ahora sos nivel ${nivelNuevo.nombre_nivel} en Belissa Joyas!`,
       contenido,
+      html,
     );
 
     await this.notificacionService.registrar({

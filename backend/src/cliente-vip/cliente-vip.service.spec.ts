@@ -100,7 +100,8 @@ describe('ClienteVipService', () => {
       expect(mockEmailService.enviar).toHaveBeenCalledWith(
         mockUsuario.email,
         expect.stringContaining('Plata'),
-        expect.any(String)
+        expect.any(String),
+        expect.stringContaining('#3B2F2A'),
       );
       expect(mockNotificacionService.registrar).toHaveBeenCalledWith(expect.objectContaining({
         tipo: TipoNotificacion.SUBIDA_NIVEL_VIP,
