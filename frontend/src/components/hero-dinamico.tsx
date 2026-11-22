@@ -49,10 +49,10 @@ export default function HeroDinamico({ products }: { products: ProductoDestacado
           Joyería de lujo
         </p>
         <h1
-          className="anim-aparecer texto-brillo mt-4 text-balance font-serif text-5xl font-semibold md:text-7xl"
-          style={{ animationDelay: "0.15s, 0s" }}
+          className="anim-aparecer mt-4 text-balance font-serif text-5xl font-semibold md:text-7xl"
+          style={{ animationDelay: "0.15s" }}
         >
-          Elevá tu elegancia
+          <span className="texto-brillo">Elevá tu elegancia</span>
         </h1>
         <p
           className="anim-aparecer mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-stone-500"
