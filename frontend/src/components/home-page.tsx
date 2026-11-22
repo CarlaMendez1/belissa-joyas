@@ -207,18 +207,18 @@ export default function HomePage({
           <p className="mt-3 text-center text-stone-500">
             Explorá nuestras categorías destacadas.
           </p>
-          <div className="mt-10 grid grid-cols-2 gap-6 lg:grid-cols-4">
+          <div className="mt-10 flex flex-wrap justify-center gap-6">
             {categories.map((category, idx) => {
               const isSelected = selectedCategory === category.id
               return (
-                <Revelar key={category.id} retraso={idx * 80}>
+                <Revelar key={category.id} retraso={idx * 80} className="w-[calc(50%-0.75rem)] sm:w-48 lg:w-56">
                 <button
                   type="button"
                   onClick={() => onSelectCategory?.(isSelected ? null : category.id)}
-                  className="text-left"
+                  className="block w-full text-left"
                 >
                   <Card
-                    className={`flex flex-col items-center gap-4 border-stone-200 p-8 text-center transition-colors hover:border-dusty-rose ${
+                    className={`flex flex-col items-center gap-4 border-stone-200 p-8 text-center transition-all hover:-translate-y-1 hover:border-dusty-rose hover:shadow-lg ${
                       isSelected ? "border-cocoa-taupe bg-cocoa-taupe text-stone-50" : "bg-white"
                     }`}
                   >
