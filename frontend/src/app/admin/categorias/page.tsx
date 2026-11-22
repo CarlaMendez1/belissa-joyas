@@ -194,6 +194,10 @@ export default function AdminCategoriasPage() {
     setGuardandoSub(false);
   }
 
+  let textoBotonFoto = 'Subir foto';
+  if (subiendoFoto) textoBotonFoto = 'Subiendo...';
+  else if (editando?.imagen_portada) textoBotonFoto = 'Cambiar foto';
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -228,7 +232,7 @@ export default function AdminCategoriasPage() {
             </div>
             {editando ? (
               <div>
-                <label className="text-sm text-stone-600 mb-1 block">Foto de portada</label>
+                <p className="text-sm text-stone-600 mb-1">Foto de portada</p>
                 <p className="text-xs text-stone-400 mb-2">
                   Se muestra en la tarjeta de la categoría en el inicio. Si no cargás ninguna, se usa la foto de un producto.
                 </p>
@@ -243,14 +247,14 @@ export default function AdminCategoriasPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className="cursor-pointer rounded-full border border-dusty-rose px-4 py-1.5 text-sm text-cocoa-taupe hover:bg-blush-oat/40">
-                      {subiendoFoto ? 'Subiendo...' : editando.imagen_portada ? 'Cambiar foto' : 'Subir foto'}
+                      {textoBotonFoto}
                       <input
                         type="file"
                         accept="image/*"
                         className="hidden"
                         disabled={subiendoFoto}
                         onChange={(e) => {
-                          cambiarPortada(e.target.files?.[0]);
+                          void cambiarPortada(e.target.files?.[0]);
                           e.target.value = '';
                         }}
                       />
