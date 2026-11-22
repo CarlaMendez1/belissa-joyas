@@ -8,9 +8,10 @@ type ConfirmDialogProps = {
   mensaje: string;
   onConfirmar: () => void;
   onCancelar: () => void;
+  textoConfirmar?: string;
 };
 
-export default function ConfirmDialog({ abierto, titulo, mensaje, onConfirmar, onCancelar }: ConfirmDialogProps) {
+export default function ConfirmDialog({ abierto, titulo, mensaje, onConfirmar, onCancelar, textoConfirmar = 'Eliminar' }: ConfirmDialogProps) {
   if (!abierto) return null;
 
   return (
@@ -28,7 +29,7 @@ export default function ConfirmDialog({ abierto, titulo, mensaje, onConfirmar, o
             Cancelar
           </Button>
           <Button onClick={onConfirmar} className="bg-red-600 hover:bg-red-700 text-white rounded-full">
-            Eliminar
+            {textoConfirmar}
           </Button>
         </div>
       </div>

@@ -39,7 +39,7 @@ export default function ProductoPage() {
   const { id } = useParams();
   const router = useRouter();
   const { status } = useSession();
-  const { agregarItem, carrito } = useCarrito();
+  const { agregarItem, carrito, setAbierto: abrirCarrito } = useCarrito();
 
   const [producto, setProducto] = useState<Producto | null>(null);
   const [variantes, setVariantes] = useState<Variante[]>([]);
@@ -73,7 +73,11 @@ export default function ProductoPage() {
    const enCarrito: number | undefined = (carrito?.items ?? []).find(
     (i: { id_variante: number; cantidad: number }) => i.id_variante === varianteSeleccionada?.id_variante,
   )?.cantidad;
-  const cantidad = cantidadElegida ?? enCarrito ?? 1;
+  const stockDisponible = varianteSeleccionada?.stock_disponible ?? 0;
+  const sinStock = !!varianteSeleccionada && stockDisponible <= 0;
+  // Nunca se muestra más cantidad que el stock disponible
+  const cantidad = Math.max(1, Math.min(cantidadElegida ?? enCarrito ?? 1, stockDisponible || 1));
+  const sinCambios = enCarrito !== undefined && cantidad === enCarrito;
   const gruposOpciones = useMemo(() => {
     const mapa: Record<number, Set<string>> = {};
     variantes.forEach((v: Variante) => {
@@ -253,34 +257,44 @@ const imagenes: string[] =
             )}
 
             {/* Control de cantidad */}
-            <div className="flex items-center gap-4">
-              <p className="text-sm font-medium text-stone-700">Cantidad:</p>
-              <div className="flex items-center border border-stone-300 rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setCantidadElegida(Math.max(1, cantidad - 1))}
-                  className="px-3 py-2 text-stone-600 hover:bg-stone-100 transition-colors"
-                >−</button>
-                <span className="px-4 py-2 text-stone-800 font-medium min-w-8 text-center">{cantidad}</span>
-                <button
-                  type="button"
-                  onClick={() => setCantidadElegida(Math.min(varianteSeleccionada?.stock_disponible || 10, cantidad + 1))}
-                  className="px-3 py-2 text-stone-600 hover:bg-stone-100 transition-colors"
-                >+</button>
+            {sinStock ? (
+              <p className="text-sm font-medium text-red-600">Sin stock por el momento</p>
+            ) : (
+              <div className="flex items-center gap-4">
+                <p className="text-sm font-medium text-stone-700">Cantidad:</p>
+                <div className="flex items-center border border-stone-300 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setCantidadElegida(Math.max(1, cantidad - 1))}
+                    disabled={cantidad <= 1}
+                    className="px-3 py-2 text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-40"
+                  >−</button>
+                  <span className="px-4 py-2 text-stone-800 font-medium min-w-8 text-center">{cantidad}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCantidadElegida(Math.min(stockDisponible, cantidad + 1))}
+                    disabled={!varianteSeleccionada || cantidad >= stockDisponible}
+                    className="px-3 py-2 text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-40"
+                  >+</button>
+                </div>
+                {enCarrito !== undefined && (
+                  <span className="text-xs text-stone-500">Ya tenés {enCarrito} en el carrito</span>
+                )}
               </div>
-                            {enCarrito !== undefined && (
-                <span className="text-xs text-stone-500">Ya tenés {enCarrito} en el carrito</span>
-              )}
-            </div>
+            )}
 
-            {/* Botón agregar al carrito */}
+            {/* Botón agregar al carrito: si no cambió la cantidad, permite volver al carrito */}
             <Button
-              onClick={handleAgregarAlCarrito}
-              disabled={agregando || !varianteSeleccionada || varianteSeleccionada.stock_disponible === 0 || cantidad === enCarrito}
+              onClick={sinCambios ? () => abrirCarrito(true) : handleAgregarAlCarrito}
+              disabled={agregando || !varianteSeleccionada || sinStock}
               className="w-full bg-cocoa-taupe hover:bg-espresso-brown text-white py-3 rounded-full flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-4 h-4" />
-              {agregando ? 'Guardando...' : enCarrito !== undefined ? 'Actualizar cantidad' : 'Agregar al carrito'}
+              {sinStock && 'Sin stock'}
+              {!sinStock && agregando && 'Guardando...'}
+              {!sinStock && !agregando && sinCambios && 'Volver al carrito'}
+              {!sinStock && !agregando && !sinCambios && enCarrito !== undefined && 'Actualizar cantidad'}
+              {!sinStock && !agregando && enCarrito === undefined && 'Agregar al carrito'}
             </Button>
 
             {/* Mensaje de confirmación */}
