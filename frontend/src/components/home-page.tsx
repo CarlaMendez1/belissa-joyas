@@ -13,6 +13,7 @@ import { LogOut, LayoutDashboard, Crown, MapPin, Package, Heart } from "lucide-r
 import BotonFavorito from "@/components/boton-favorito"
 import HeroDinamico from "@/components/hero-dinamico"
 import Revelar from "@/components/revelar"
+import DescripcionExpandible from "@/components/descripcion-expandible"
 
 type Category = {
   id: string
@@ -323,23 +324,23 @@ export default function HomePage({
 </div>
                   <div className="flex flex-1 flex-col gap-2 p-6">
                     <span className="font-mono text-xs text-dusty-rose">{product.sku}</span>
-                    <h3 className="line-clamp-2 min-h-[3.5rem] font-serif text-xl leading-7 text-espresso-brown">{product.name}</h3>
-                    {/* Alto fijo de 2 líneas: sin importar el largo de la descripción, todas las tarjetas quedan iguales */}
-                    <p className="line-clamp-2 min-h-[2.9rem] text-sm leading-relaxed text-stone-500">{product.description}</p>
-                    <div className="min-h-7">
+                    <h3 className="font-serif text-xl leading-7 text-espresso-brown">{product.name}</h3>
+                    <DescripcionExpandible texto={product.description} />
+                    {/* Precio y botón siempre abajo: las tarjetas de una fila quedan del mismo alto */}
+                    <div className="mt-auto pt-2">
                     {product.precioDesde != null && (
                       <p className="font-sans text-lg font-semibold text-espresso-brown">
                         {product.variosPrecios && <span className="mr-1 text-sm font-normal text-stone-400">Desde</span>}
                         ${Math.round(product.precioDesde).toLocaleString('es-AR')}
                       </p>
                     )}
-                    </div>
                     <Button
                       variant="outline"
-                      className="mt-auto border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"
+                      className="mt-3 w-full border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"
                     >
                       Ver producto
                     </Button>
+                    </div>
                   </div>
                 </Card>
               </Link>
