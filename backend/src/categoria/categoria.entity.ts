@@ -13,6 +13,9 @@ export class Categoria {
   @Column({ type: 'text', nullable: true })
   descripcion: string;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  imagen_portada: string | null;
+
   @Column({ type: 'enum', enum: EstadoGeneral, default: EstadoGeneral.ACTIVA })
   estado: EstadoGeneral;
 }

@@ -17,6 +17,7 @@ import Revelar from "@/components/revelar"
 type Category = {
   id: string
   name: string
+  image?: string | null
 }
 
 type Product = {
@@ -62,9 +63,7 @@ export default function HomePage({
 
   const filteredProducts = products.filter((p) => {
   const coincideTexto = `${p.name} ${p.description} ${p.sku}`.toLowerCase().includes(query.toLowerCase());
-  const coincideSubcat = selectedSubcategory ? p.id === selectedSubcategory : true;
-  
-  return coincideTexto && coincideSubcat;
+  return coincideTexto;
 });
 
   return (
@@ -214,21 +213,40 @@ export default function HomePage({
                 <Revelar key={category.id} retraso={idx * 80} className="w-[calc(50%-0.75rem)] sm:w-48 lg:w-56">
                 <button
                   type="button"
-                  onClick={() => onSelectCategory?.(isSelected ? null : category.id)}
+                  onClick={() => {
+                    onSelectCategory?.(isSelected ? null : category.id)
+                    if (!isSelected) {
+                      document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  }}
                   className="block w-full text-left"
                 >
-                  <Card
-                    className={`flex flex-col items-center gap-4 border-stone-200 p-8 text-center transition-all hover:-translate-y-1 hover:border-dusty-rose hover:shadow-lg ${
-                      isSelected ? "border-cocoa-taupe bg-cocoa-taupe text-stone-50" : "bg-white"
+                  <div
+                    className={`group relative aspect-[4/5] overflow-hidden rounded-2xl bg-blush-oat/50 shadow-md transition-all hover:-translate-y-1 hover:shadow-xl ${
+                      isSelected ? "ring-4 ring-dusty-rose ring-offset-2 ring-offset-milk" : ""
                     }`}
                   >
-                    <Gem className={isSelected ? "h-8 w-8 text-stone-50" : "h-8 w-8 text-dusty-rose"} />
-                    <span
-                      className={`font-medium ${isSelected ? "text-white" : "text-espresso-brown"}`}
-                    >
-                      {category.name}
-                    </span>
-                  </Card>
+                    {category.image ? (
+                      <Image
+                        src={category.image}
+                        alt={category.name}
+                        fill
+                        sizes="(max-width: 640px) 50vw, 224px"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Gem className="h-10 w-10 text-dusty-rose" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-espresso-brown/85 via-transparent to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-4 text-stone-50">
+                      <span className="block font-serif text-xl">{category.name}</span>
+                      <span className="text-xs uppercase tracking-wider text-blush-oat">
+                        {isSelected ? "Quitar filtro ✕" : "Ver colección →"}
+                      </span>
+                    </div>
+                  </div>
                 </button>
                 </Revelar>
               )

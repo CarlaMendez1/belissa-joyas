@@ -547,3 +547,23 @@ export async function guardarCarrusel(token: string, ids_producto: number[]) {
   });
   return manejarRespuesta(res);
 }
+
+// --- Foto de portada de categoría ---
+export async function subirPortadaCategoria(token: string, id_categoria: number, archivo: File) {
+  const formData = new FormData();
+  formData.append('imagen', archivo);
+  const res = await fetch(`${API}/categorias/${id_categoria}/portada`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  return manejarRespuesta(res);
+}
+
+export async function quitarPortadaCategoria(token: string, id_categoria: number) {
+  const res = await fetch(`${API}/categorias/${id_categoria}/portada`, {
+    method: 'DELETE',
+    headers: headers(token),
+  });
+  return manejarRespuesta(res);
+}
