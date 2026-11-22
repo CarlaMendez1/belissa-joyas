@@ -49,14 +49,7 @@ export default function Page() {
     name: s.nombre,
   }));
 
-const prods = productos
-  .filter((p: any) => {
-    if (subcategoriaSeleccionada) return String(p.id_subcategoria) === subcategoriaSeleccionada;
-    // Solo categoría elegida: productos de cualquiera de sus subcategorías
-    if (categoriaSeleccionada) return subcategorias.some((s: any) => s.id_subcategoria === p.id_subcategoria);
-    return true;
-  })
-  .map((p: any) => ({
+  const aProducto = (p: any) => ({
     id: String(p.id_producto),
     sku: p.codigo_sku,
     name: p.nombre,
@@ -64,18 +57,20 @@ const prods = productos
     imagenes: p.imagenes || [],
     precioDesde: p.precio_desde ?? null,
     variosPrecios: Boolean(p.varios_precios),
-  }));
+  });
 
- 
-  const destacados = carrusel.map((p: any) => ({
-    id: String(p.id_producto),
-    sku: p.codigo_sku,
-    name: p.nombre,
-    description: p.descripcion || '',
-    imagenes: p.imagenes || [],
-    precioDesde: p.precio_desde ?? null,
-    variosPrecios: Boolean(p.varios_precios),
-  }));
+  const prods = productos
+    .filter((p: any) => {
+      if (subcategoriaSeleccionada) return String(p.id_subcategoria) === subcategoriaSeleccionada;
+      // Solo categoría elegida: productos de cualquiera de sus subcategorías
+      if (categoriaSeleccionada) return subcategorias.some((s: any) => s.id_subcategoria === p.id_subcategoria);
+      return true;
+    })
+    .map(aProducto);
+
+  // Carrusel de la portada: el elegido en el admin o, si no hay, los productos sin filtrar.
+  // No depende de la colección seleccionada, así la portada no cambia al filtrar el catálogo.
+  const destacados = (carrusel.length > 0 ? carrusel : productos).map(aProducto);
 
   return (
     <HomePage
