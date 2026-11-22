@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { getProducto, getVariantesPorProducto, getSubcategorias, getOpciones, getOpcionesPorCategoria, getCaracteristicasPorOpcion } from '@/lib/api';
+import { getProducto, getVariantesPorProducto, getSubcategorias, getOpciones, getOpcionesPorCategoria, getCategorias, etiquetaSubcategoria, getCaracteristicasPorOpcion } from '@/lib/api';
 import {
   actualizarProducto, crearVariante, actualizarVariante, eliminarVariante,
   subirImagenProducto, subirImagenVariante, eliminarImagenProducto,
@@ -21,6 +21,7 @@ export default function AdminProductoDetallePage() {
   const [producto, setProducto] = useState<any>(null);
   const [variantes, setVariantes] = useState<any[]>([]);
   const [subcategorias, setSubcategorias] = useState<any[]>([]);
+  const [categoriasTodas, setCategoriasTodas] = useState<any[]>([]);
   const [opciones, setOpciones] = useState<any[]>([]);
   const [opcionesDelProducto, setOpcionesDelProducto] = useState<any[]>([]);
   const [caractsPorOpcion, setCaractsPorOpcion] = useState<Record<number, any[]>>({});
@@ -49,12 +50,14 @@ export default function AdminProductoDetallePage() {
 
   async function cargar() {
     setCargando(true);
-    const [prod, vars, subs, ops] = await Promise.all([
+    const [prod, vars, subs, ops, cats] = await Promise.all([
       getProducto(Number(id)),
       getVariantesPorProducto(Number(id)),
       getSubcategorias(),
       getOpciones(),
+      getCategorias(),
     ]);
+    setCategoriasTodas(cats);
     setProducto(prod);
     setVariantes(vars);
     setSubcategorias(subs);
@@ -292,7 +295,7 @@ export default function AdminProductoDetallePage() {
               >
                 {subcategorias.map((s: any) => (
                   <option key={s.id_subcategoria} value={s.id_subcategoria}>
-                    {s.nombre}
+                    {etiquetaSubcategoria(s, categoriasTodas)}
                   </option>
                 ))}
               </select>

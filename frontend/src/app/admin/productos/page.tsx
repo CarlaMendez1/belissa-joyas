@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getProductos, getSubcategorias } from '@/lib/api';
+import { getProductos, getSubcategorias, getCategorias, etiquetaSubcategoria } from '@/lib/api';
 import { crearProducto, eliminarProducto } from '@/lib/admin-api';
 import { Plus, Trash2, X, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ export default function AdminProductosListaPage() {
 
   const [productos, setProductos] = useState<any[]>([]);
   const [subcategorias, setSubcategorias] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -30,9 +31,10 @@ export default function AdminProductosListaPage() {
 
   async function cargar() {
     setCargando(true);
-    const [prods, subs] = await Promise.all([getProductos(), getSubcategorias()]);
+    const [prods, subs, cats] = await Promise.all([getProductos(), getSubcategorias(), getCategorias()]);
     setProductos(prods);
     setSubcategorias(subs);
+    setCategorias(cats);
     setCargando(false);
   }
 
@@ -41,7 +43,10 @@ export default function AdminProductosListaPage() {
   }, []);
 
   function nombreSubcategoria(id_subcategoria: number) {
-    return subcategorias.find((s: any) => s.id_subcategoria === id_subcategoria)?.nombre || '—';
+    return etiquetaSubcategoria(
+      subcategorias.find((s: any) => s.id_subcategoria === id_subcategoria),
+      categorias,
+    );
   }
 
   function abrirCrear() {
@@ -127,7 +132,7 @@ export default function AdminProductosListaPage() {
               >
                 {subcategorias.map((s: any) => (
                   <option key={s.id_subcategoria} value={s.id_subcategoria}>
-                    {s.nombre}
+                    {etiquetaSubcategoria(s, categorias)}
                   </option>
                 ))}
               </select>

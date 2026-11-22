@@ -218,3 +218,13 @@ export async function getCarrusel() {
   const res = await fetch(`${API}/carrusel`, { cache: 'no-store' });
   return res.json();
 }
+
+// "Anillos › Plata 925": así se distinguen subcategorías que se llaman igual en categorías distintas
+export function etiquetaSubcategoria(
+  sub: { nombre: string; id_categoria?: number } | undefined,
+  categorias: { id_categoria: number; nombre: string }[],
+): string {
+  if (!sub) return '—';
+  const cat = categorias.find((c) => c.id_categoria === sub.id_categoria);
+  return cat ? `${cat.nombre} › ${sub.nombre}` : sub.nombre;
+}
