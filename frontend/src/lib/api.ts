@@ -213,3 +213,8 @@ export async function getMisFavoritos(token: string): Promise<ProductoFavorito[]
   }
   return res.json();
 }
+
+export async function getCarrusel() {
+  const res = await fetch(`${API}/carrusel`, { cache: 'no-store' });
+  return res.json();
+}
