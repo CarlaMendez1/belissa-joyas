@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { getCategorias, getProductos } from '@/lib/api';
+import { getCategorias, getProductos, getCarrusel } from '@/lib/api';
 import HomePage from '@/components/home-page';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -8,6 +8,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 export default function Page() {
   const [productos, setProductos] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
+  const [carrusel, setCarrusel] = useState<any[]>([]);
   const [subcategorias, setSubcategorias] = useState<any[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<string | null>(null);
@@ -16,6 +17,7 @@ export default function Page() {
   useEffect(() => {
     getCategorias().then(setCategorias);
     getProductos().then(setProductos);
+    getCarrusel().then((c) => setCarrusel(Array.isArray(c) ? c : [])).catch(() => {});
   }, []);
 
   function handleSelectCategoria(id: string | null) {
@@ -61,9 +63,20 @@ const prods = productos
   }));
 
  
+  const destacados = carrusel.map((p: any) => ({
+    id: String(p.id_producto),
+    sku: p.codigo_sku,
+    name: p.nombre,
+    description: p.descripcion || '',
+    imagenes: p.imagenes || [],
+    precioDesde: p.precio_desde ?? null,
+    variosPrecios: Boolean(p.varios_precios),
+  }));
+
   return (
     <HomePage
       products={prods}
+      destacados={destacados}
       categories={cats}
       subcategories={subcats}
       selectedCategory={categoriaSeleccionada}

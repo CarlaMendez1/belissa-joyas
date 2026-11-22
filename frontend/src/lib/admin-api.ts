@@ -537,3 +537,13 @@ export async function quitarAdministrador(token: string, id: number): Promise<Ad
   const res = await fetch(`${API}/administradores/${id}`, { method: 'DELETE', headers: headers(token) });
   return manejarRespuesta(res);
 }
+
+// --- Carrusel del inicio ---
+export async function guardarCarrusel(token: string, ids_producto: number[]) {
+  const res = await fetch(`${API}/carrusel`, {
+    method: 'PUT',
+    headers: headers(token),
+    body: JSON.stringify({ ids_producto }),
+  });
+  return manejarRespuesta(res);
+}

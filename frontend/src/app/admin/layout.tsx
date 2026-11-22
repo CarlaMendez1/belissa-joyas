@@ -3,7 +3,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, FolderTree, Package, Sliders, Settings, Crown, ArrowLeft, LogOut, Truck, BarChart3, ShieldCheck, ClipboardList, ScrollText } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Package, Sliders, Settings, Crown, ArrowLeft, LogOut, Truck, BarChart3, ShieldCheck, ClipboardList, ScrollText, GalleryHorizontal } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -29,6 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin', label: 'Inicio', icon: LayoutDashboard },
     { href: '/admin/categorias', label: 'Categorías', icon: FolderTree },
     { href: '/admin/productos', label: 'Productos', icon: Package },
+    { href: '/admin/carrusel', label: 'Carrusel del inicio', icon: GalleryHorizontal },
     { href: '/admin/opciones', label: 'Opciones', icon: Sliders },
     { href: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList },
     { href: '/admin/envios', label: 'Envíos', icon: Truck },

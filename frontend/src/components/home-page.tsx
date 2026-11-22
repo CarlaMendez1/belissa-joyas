@@ -36,6 +36,7 @@ type Subcategory = {
 
 type HomePageProps = {
   products?: Product[]
+  destacados?: Product[]
   categories?: Category[]
   subcategories?: Subcategory[]
   selectedCategory?: string | null
@@ -46,6 +47,7 @@ type HomePageProps = {
 
 export default function HomePage({
   products = [],
+  destacados = [],
   categories = [],
   subcategories = [],
   selectedCategory = null,
@@ -195,7 +197,7 @@ export default function HomePage({
       </header>
 
       <main>
-        <HeroDinamico products={products} />
+        <HeroDinamico products={destacados.length > 0 ? destacados : products} />
 
         {/* Colecciones */}
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
