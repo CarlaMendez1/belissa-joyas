@@ -205,7 +205,7 @@ export default function HomePage({
             Colecciones
           </h2>
           <p className="mt-3 text-center text-stone-500">
-            Explorá nuestras categorías destacadas.
+            Explorá nuestras categorías
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-6">
             {categories.map((category, idx) => {
