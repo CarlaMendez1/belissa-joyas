@@ -54,14 +54,7 @@ export default function HeroDinamico({ products }: { products: ProductoDestacado
         >
           <span className="texto-brillo">Elevá tu elegancia</span>
         </h1>
-        <p
-          className="anim-aparecer mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-stone-500"
-          style={{ animationDelay: "0.3s" }}
-        >
-          Descubrí joyas atemporales perfectas para cualquier ocasión, diseñadas para
-          acompañar tus momentos más especiales.
-        </p>
-        <div className="anim-aparecer mt-8" style={{ animationDelay: "0.45s" }}>
+        <div className="anim-aparecer mt-10" style={{ animationDelay: "0.3s" }}>
           <a
             href="#catalogo"
             className="inline-block rounded-full bg-espresso-brown px-8 py-3 text-sm font-medium text-stone-50 shadow-lg shadow-espresso-brown/20 transition-all hover:-translate-y-0.5 hover:bg-cocoa-taupe"

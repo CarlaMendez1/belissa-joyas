@@ -10,7 +10,7 @@ import { AccionAuditoria } from '../auditoria/log-auditoria.entity';
 describe('CategoriaService', () => {
   let service: CategoriaService;
 
-  const mockRepo = { find: jest.fn(), findOne: jest.fn(), save: jest.fn(), update: jest.fn() };
+  const mockRepo = { find: jest.fn(), findOne: jest.fn(), save: jest.fn(), update: jest.fn(), manager: { query: jest.fn() } };
   const mockQb = { innerJoin: jest.fn().mockReturnThis(), getMany: jest.fn() };
   const mockOpcionRepo = { createQueryBuilder: jest.fn() };
   const mockAuditoria = { registrar: jest.fn() };
@@ -38,6 +38,58 @@ describe('CategoriaService', () => {
       const r = await service.findAll();
       expect(mockRepo.find).toHaveBeenCalledWith({ where: { estado: EstadoGeneral.ACTIVA } });
       expect(r).toEqual([anillos]);
+    });
+  });
+
+  describe('listarConPortada()', () => {
+    const cadenas = { id_categoria: 2, nombre: 'Cadenas', estado: EstadoGeneral.ACTIVA, imagen_portada: 'https://x/portada.jpg' };
+
+    it('usa la portada elegida y, si no hay, la foto de un producto', async () => {
+      mockRepo.find.mockResolvedValue([{ ...anillos, imagen_portada: null }, cadenas]);
+      mockRepo.manager.query.mockResolvedValue([
+        { id_categoria: 1, imagen: 'https://x/anillo.jpg' },
+        { id_categoria: 2, imagen: 'https://x/cadena.jpg' },
+      ]);
+      const r = await service.listarConPortada();
+      expect(r[0].imagen).toBe('https://x/anillo.jpg');
+      expect(r[1].imagen).toBe('https://x/portada.jpg');
+    });
+
+    it('devuelve imagen null si no hay portada ni productos con foto', async () => {
+      mockRepo.find.mockResolvedValue([{ ...anillos, imagen_portada: null }]);
+      mockRepo.manager.query.mockResolvedValue([]);
+      const r = await service.listarConPortada();
+      expect(r[0].imagen).toBeNull();
+    });
+  });
+
+  describe('actualizarPortada()', () => {
+    it('guarda la URL y audita el cambio', async () => {
+      mockRepo.findOne
+        .mockResolvedValueOnce({ ...anillos, imagen_portada: null })
+        .mockResolvedValueOnce({ ...anillos, imagen_portada: 'https://x/a.jpg' });
+      const r = await service.actualizarPortada(1, 'https://x/a.jpg', 9);
+      expect(mockRepo.update).toHaveBeenCalledWith(1, { imagen_portada: 'https://x/a.jpg' });
+      expect(mockAuditoria.registrar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id_usuario: 9,
+          accion: AccionAuditoria.EDITAR,
+          datos_anteriores: { imagen_portada: null },
+          datos_nuevos: { imagen_portada: 'https://x/a.jpg' },
+        }),
+      );
+      expect(r.imagen_portada).toBe('https://x/a.jpg');
+    });
+
+    it('permite quitar la portada (null)', async () => {
+      mockRepo.findOne.mockResolvedValue({ ...anillos, imagen_portada: 'https://x/a.jpg' });
+      await service.actualizarPortada(1, null);
+      expect(mockRepo.update).toHaveBeenCalledWith(1, { imagen_portada: null });
+    });
+
+    it('lanza NotFound si la categoría no existe', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+      await expect(service.actualizarPortada(99, 'u')).rejects.toThrow(NotFoundException);
     });
   });
 

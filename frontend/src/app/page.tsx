@@ -24,6 +24,7 @@ export default function Page() {
     if (id === categoriaSeleccionada) return;
     setCategoriaSeleccionada(id);
     setSubcategoriaSeleccionada(null);
+    setSubcategorias([]);
     if (id) {
       fetch(`${API}/subcategorias/categoria/${id}`)
         .then(r => r.json())
@@ -40,6 +41,7 @@ export default function Page() {
   const cats = categorias.map((c: any) => ({
     id: String(c.id_categoria),
     name: c.nombre,
+    image: c.imagen ?? null,
   }));
 
   const subcats = subcategorias.map((s: any) => ({
@@ -50,6 +52,8 @@ export default function Page() {
 const prods = productos
   .filter((p: any) => {
     if (subcategoriaSeleccionada) return String(p.id_subcategoria) === subcategoriaSeleccionada;
+    // Solo categoría elegida: productos de cualquiera de sus subcategorías
+    if (categoriaSeleccionada) return subcategorias.some((s: any) => s.id_subcategoria === p.id_subcategoria);
     return true;
   })
   .map((p: any) => ({

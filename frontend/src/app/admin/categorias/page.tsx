@@ -4,9 +4,10 @@ import { useSession } from 'next-auth/react';
 import {
   crearCategoria, actualizarCategoria, eliminarCategoria,
   crearSubcategoria, actualizarSubcategoria, eliminarSubcategoria,
+  subirPortadaCategoria, quitarPortadaCategoria,
 } from '@/lib/admin-api';
 import { getCategorias, getSubcategoriasPorCategoria } from '@/lib/api';
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, ChevronDown, ChevronRight, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/confirm-dialog';
@@ -23,6 +24,7 @@ export default function AdminCategoriasPage() {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
 
   const [expandida, setExpandida] = useState<number | null>(null);
   const [subcats, setSubcats] = useState<Record<number, any[]>>({});
@@ -61,6 +63,33 @@ export default function AdminCategoriasPage() {
     setDescripcion(categoria.descripcion || '');
     setError('');
     setMostrarForm(true);
+  }
+
+  async function cambiarPortada(archivo: File | undefined) {
+    if (!archivo || !editando) return;
+    setSubiendoFoto(true);
+    setError('');
+    try {
+      const actualizada = await subirPortadaCategoria(token, editando.id_categoria, archivo);
+      setEditando((e: any) => ({ ...e, imagen_portada: actualizada.imagen_portada }));
+      await cargar();
+    } catch (err: any) {
+      setError(err.message || 'No se pudo subir la foto');
+    }
+    setSubiendoFoto(false);
+  }
+
+  async function sacarPortada() {
+    if (!editando) return;
+    setSubiendoFoto(true);
+    try {
+      await quitarPortadaCategoria(token, editando.id_categoria);
+      setEditando((e: any) => ({ ...e, imagen_portada: null }));
+      await cargar();
+    } catch (err: any) {
+      setError(err.message || 'No se pudo quitar la foto');
+    }
+    setSubiendoFoto(false);
   }
 
   function cerrarForm() {
@@ -165,6 +194,10 @@ export default function AdminCategoriasPage() {
     setGuardandoSub(false);
   }
 
+  let textoBotonFoto = 'Subir foto';
+  if (subiendoFoto) textoBotonFoto = 'Subiendo...';
+  else if (editando?.imagen_portada) textoBotonFoto = 'Cambiar foto';
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -197,6 +230,53 @@ export default function AdminCategoriasPage() {
               <label className="text-sm text-stone-600 mb-1 block">Descripción</label>
               <Input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Opcional" />
             </div>
+            {editando ? (
+              <div>
+                <p className="text-sm text-stone-600 mb-1">Foto de portada</p>
+                <p className="text-xs text-stone-400 mb-2">
+                  Se muestra en la tarjeta de la categoría en el inicio. Si no cargás ninguna, se usa la foto de un producto.
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-32 rounded-lg bg-blush-oat/40 overflow-hidden flex items-center justify-center">
+                    {editando.imagen_portada ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={editando.imagen_portada} alt="Portada" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImagePlus className="w-6 h-6 text-dusty-rose" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="cursor-pointer rounded-full border border-dusty-rose px-4 py-1.5 text-sm text-cocoa-taupe hover:bg-blush-oat/40">
+                      {textoBotonFoto}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={subiendoFoto}
+                        onChange={(e) => {
+                          void cambiarPortada(e.target.files?.[0]);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {editando.imagen_portada && (
+                      <button
+                        type="button"
+                        onClick={sacarPortada}
+                        disabled={subiendoFoto}
+                        className="text-sm text-red-600 hover:underline text-left"
+                      >
+                        Quitar foto
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-stone-400">
+                Cuando guardes la categoría podés editarla para subirle una foto de portada.
+              </p>
+            )}
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex gap-2 mt-2">
               <Button

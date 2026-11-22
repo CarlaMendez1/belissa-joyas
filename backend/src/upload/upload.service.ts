@@ -12,10 +12,10 @@ export class UploadService {
     });
   }
 
-  async subirImagen(buffer: Buffer): Promise<string> {
+  async subirImagen(buffer: Buffer, carpeta = 'productos'): Promise<string> {
     return new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { folder: 'belissa-joyas/productos' },
+        { folder: `belissa-joyas/${carpeta}` },
         (error, result) => {
           if (error || !result) {
             return reject(
