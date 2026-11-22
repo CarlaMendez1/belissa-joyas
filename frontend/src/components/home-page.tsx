@@ -302,9 +302,9 @@ export default function HomePage({
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProducts.map((product, idx) => (
-              <Revelar key={product.id} retraso={(idx % 3) * 100}>
-              <Link href={`/productos/${product.id}`}>
-                <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:-translate-y-1 hover:border-dusty-rose hover:shadow-xl cursor-pointer">
+              <Revelar key={product.id} retraso={(idx % 3) * 100} className="h-full">
+              <Link href={`/productos/${product.id}`} className="block h-full">
+                <Card className="flex h-full flex-col overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:-translate-y-1 hover:border-dusty-rose hover:shadow-xl cursor-pointer">
                 <div className="relative aspect-square bg-blush-oat/30">
   <BotonFavorito idProducto={Number(product.id)} className="absolute right-3 top-3 z-10" />
   {product.imagenes?.[0] ? (
@@ -321,19 +321,22 @@ export default function HomePage({
     </div>
   )}
 </div>
-                  <div className="flex flex-col gap-2 p-6">
+                  <div className="flex flex-1 flex-col gap-2 p-6">
                     <span className="font-mono text-xs text-dusty-rose">{product.sku}</span>
-                    <h3 className="font-serif text-xl text-espresso-brown">{product.name}</h3>
-                    <p className="text-sm leading-relaxed text-stone-500">{product.description}</p>
-                        {product.precioDesde != null && (
+                    <h3 className="line-clamp-2 min-h-[3.5rem] font-serif text-xl leading-7 text-espresso-brown">{product.name}</h3>
+                    {/* Alto fijo de 2 líneas: sin importar el largo de la descripción, todas las tarjetas quedan iguales */}
+                    <p className="line-clamp-2 min-h-[2.9rem] text-sm leading-relaxed text-stone-500">{product.description}</p>
+                    <div className="min-h-7">
+                    {product.precioDesde != null && (
                       <p className="font-sans text-lg font-semibold text-espresso-brown">
                         {product.variosPrecios && <span className="mr-1 text-sm font-normal text-stone-400">Desde</span>}
                         ${Math.round(product.precioDesde).toLocaleString('es-AR')}
                       </p>
                     )}
+                    </div>
                     <Button
                       variant="outline"
-                      className="mt-4 border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"
+                      className="mt-auto border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"
                     >
                       Ver producto
                     </Button>
