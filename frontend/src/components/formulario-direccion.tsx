@@ -26,7 +26,6 @@ export default function FormularioDireccion({ provincias, inicial, guardando, er
   const [idProvincia, setIdProvincia] = useState<string>(inicial ? String(inicial.id_provincia) : '');
   const [codigoPostal, setCodigoPostal] = useState(inicial?.codigo_postal ?? '');
   const [observaciones, setObservaciones] = useState(inicial?.observaciones ?? '');
-  const [predeterminada, setPredeterminada] = useState(inicial?.es_predeterminada ?? false);
   const [errorLocal, setErrorLocal] = useState('');
 
   function handleSubmit(e: React.FormEvent) {
@@ -57,7 +56,8 @@ export default function FormularioDireccion({ provincias, inicial, guardando, er
       id_provincia: Number(idProvincia),
       codigo_postal: codigoPostal.trim(),
       observaciones,
-      es_predeterminada: predeterminada,
+      // Solo se puede tener una dirección, así que siempre es la predeterminada
+      es_predeterminada: true,
     });
   }
 
@@ -119,15 +119,6 @@ export default function FormularioDireccion({ provincias, inicial, guardando, er
           <Input id="dir-obs" value={observaciones} maxLength={255} onChange={(e) => setObservaciones(e.target.value)} />
         </div>
       </div>
-
-      <label className="flex items-center gap-2 text-sm text-stone-600">
-        <input
-          type="checkbox"
-          checked={predeterminada}
-          onChange={(e) => setPredeterminada(e.target.checked)}
-        />
-        Usar como dirección predeterminada
-      </label>
 
       {(errorLocal || error) && <p className="text-sm text-red-500">{errorLocal || error}</p>}
 

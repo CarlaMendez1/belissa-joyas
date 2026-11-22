@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { RolUsuario } from '../usuario/usuario.entity';
+import { EmailService } from '../email/email.service';
 
 jest.mock('bcrypt');
 
@@ -14,6 +15,10 @@ describe('AuthService', () => {
   const mockUsuarioService = {
     findByEmail: jest.fn(),
     save: jest.fn(),
+  };
+
+  const mockEmailService = {
+    enviar: jest.fn().mockResolvedValue(true),
   };
 
   const mockJwtService = {
@@ -26,6 +31,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: UsuarioService, useValue: mockUsuarioService },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 
@@ -60,6 +66,41 @@ describe('AuthService', () => {
         email: 'carla@belissa.com',
         password_hash: 'hashed-password',
       }));
+    });
+
+    it('envía un correo de bienvenida al registrarse', async () => {
+      mockUsuarioService.findByEmail.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+      mockUsuarioService.save.mockResolvedValue({ id_usuario: 1, nombre: 'Carla', email: 'carla@belissa.com', rol: RolUsuario.CLIENTE });
+
+      await authService.registro({ nombre: 'Carla', apellido: 'Mendez', email: 'carla@belissa.com', password: '123456' });
+      await new Promise((r) => setImmediate(r));
+
+      expect(mockEmailService.enviar).toHaveBeenCalledTimes(1);
+      expect(mockEmailService.enviar).toHaveBeenCalledWith(
+        'carla@belissa.com',
+        expect.stringContaining('Belissa Joyas'),
+        expect.stringContaining('Carla'),
+        expect.stringContaining('#3B2F2A'),
+      );
+    });
+
+    it('el registro funciona aunque falle el envío del correo de bienvenida', async () => {
+      mockUsuarioService.findByEmail.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+      mockUsuarioService.save.mockResolvedValue({ id_usuario: 1, nombre: 'Carla', email: 'carla@belissa.com', rol: RolUsuario.CLIENTE });
+      mockEmailService.enviar.mockRejectedValueOnce(new Error('sin servicio'));
+
+      const result = await authService.registro({ nombre: 'Carla', apellido: 'Mendez', email: 'carla@belissa.com', password: '123456' });
+      await new Promise((r) => setImmediate(r));
+
+      expect(result.access_token).toBe('mock-token-jwt');
+    });
+
+    it('no envía correo de bienvenida si el email ya existe', async () => {
+      mockUsuarioService.findByEmail.mockResolvedValue({ id_usuario: 1 });
+      await expect(authService.registro({ nombre: 'C', apellido: 'M', email: 'x@y.com', password: '123456' })).rejects.toThrow();
+      expect(mockEmailService.enviar).not.toHaveBeenCalled();
     });
 
     it('debe lanzar ConflictException si el email ya existe', async () => {
@@ -134,11 +175,13 @@ describe('AuthService', () => {
       });
 
       const result = await authService.loginConGoogle(datosGoogle);
+      await new Promise((r) => setImmediate(r));
 
       expect(result.access_token).toBe('mock-token-jwt');
       expect(mockUsuarioService.save).toHaveBeenCalledWith(expect.objectContaining({
         google_id: 'google-12345',
       }));
+      expect(mockEmailService.enviar).toHaveBeenCalledTimes(1);
     });
 
     it('debe vincular la cuenta si el email existe pero no tiene google_id', async () => {

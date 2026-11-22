@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useCarrito } from '@/context/carrito-context';
 import { X, ShoppingBag, Trash2, Pencil, Truck, Store, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ConfirmDialog from '@/components/confirm-dialog';
 import {
   getOpcionesEntrega,
   getMisDirecciones,
@@ -44,6 +45,7 @@ export default function CarritoSidebar() {
 
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState('');
+  const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
 
   // Entrega
   const [opciones, setOpciones] = useState<OpcionesEntrega | null>(null);
@@ -353,7 +355,7 @@ export default function CarritoSidebar() {
               <p className="text-xs text-red-500 text-center">{error}</p>
             )}
             <button
-              onClick={vaciarCarrito}
+              onClick={() => setConfirmandoVaciar(true)}
               className="text-xs text-stone-400 hover:text-red-500 text-center transition-colors"
             >
               Vaciar carrito
@@ -361,6 +363,18 @@ export default function CarritoSidebar() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        abierto={confirmandoVaciar}
+        titulo="¿Vaciar el carrito?"
+        mensaje="Se van a quitar todos los productos de tu carrito. Esta acción no se puede deshacer."
+        textoConfirmar="Vaciar"
+        onCancelar={() => setConfirmandoVaciar(false)}
+        onConfirmar={() => {
+          setConfirmandoVaciar(false);
+          void vaciarCarrito();
+        }}
+      />
     </>
   );
 }
