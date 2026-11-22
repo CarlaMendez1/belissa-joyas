@@ -11,6 +11,8 @@ import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut, LayoutDashboard, Crown, MapPin, Package, Heart } from "lucide-react"
 import BotonFavorito from "@/components/boton-favorito"
+import HeroDinamico from "@/components/hero-dinamico"
+import Revelar from "@/components/revelar"
 
 type Category = {
   id: string
@@ -193,33 +195,7 @@ export default function HomePage({
       </header>
 
       <main>
-        {/* Hero */}
-        <section
-          id="inicio"
-          className="bg-blush-oat/40"
-        >
-          <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6 lg:px-8">
-            <p className="text-sm font-medium uppercase tracking-widest text-dusty-rose">
-              Joyería de lujo
-            </p>
-            <h1 className="mt-4 text-balance font-serif text-5xl font-semibold text-espresso-brown md:text-6xl">
-              Elevá tu elegancia
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-stone-500">
-              Descubrí joyas atemporales perfectas para cualquier ocasión, diseñadas para
-              acompañar tus momentos más especiales.
-            </p>
-            <div className="mt-10">
-              <Button
-                size="lg"
-                className="rounded-full bg-espresso-brown px-8 text-stone-50 hover:bg-cocoa-taupe"
-                asChild
-              >
-                <a href="#catalogo">Ver catálogo</a>
-              </Button>
-            </div>
-          </div>
-        </section>
+        <HeroDinamico products={products} />
 
         {/* Colecciones */}
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
@@ -230,11 +206,11 @@ export default function HomePage({
             Explorá nuestras categorías destacadas.
           </p>
           <div className="mt-10 grid grid-cols-2 gap-6 lg:grid-cols-4">
-            {categories.map((category) => {
+            {categories.map((category, idx) => {
               const isSelected = selectedCategory === category.id
               return (
+                <Revelar key={category.id} retraso={idx * 80}>
                 <button
-                  key={category.id}
                   type="button"
                   onClick={() => onSelectCategory?.(isSelected ? null : category.id)}
                   className="text-left"
@@ -252,6 +228,7 @@ export default function HomePage({
                     </span>
                   </Card>
                 </button>
+                </Revelar>
               )
             })}
           </div>
@@ -304,9 +281,10 @@ export default function HomePage({
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((product) => (
-              <Link key={product.id} href={`/productos/${product.id}`}>
-                <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:border-dusty-rose hover:shadow-md cursor-pointer">
+            {filteredProducts.map((product, idx) => (
+              <Revelar key={product.id} retraso={(idx % 3) * 100}>
+              <Link href={`/productos/${product.id}`}>
+                <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:-translate-y-1 hover:border-dusty-rose hover:shadow-xl cursor-pointer">
                 <div className="relative aspect-square bg-blush-oat/30">
   <BotonFavorito idProducto={Number(product.id)} className="absolute right-3 top-3 z-10" />
   {product.imagenes?.[0] ? (
@@ -342,7 +320,7 @@ export default function HomePage({
                   </div>
                 </Card>
               </Link>
-
+              </Revelar>
             ))}
 
           </div>
