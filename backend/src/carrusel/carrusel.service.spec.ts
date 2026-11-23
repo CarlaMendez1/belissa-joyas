@@ -9,7 +9,12 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 describe('CarruselService', () => {
   let service: CarruselService;
 
-  const tx = { delete: jest.fn(), insert: jest.fn() };
+  const ejecutarBorrado = jest.fn();
+  const from = jest.fn(() => ({ execute: ejecutarBorrado }));
+  const tx = {
+    createQueryBuilder: jest.fn(() => ({ delete: () => ({ from }) })),
+    insert: jest.fn(),
+  };
   const repo = {
     find: jest.fn(),
     manager: { transaction: jest.fn((fn: any) => fn(tx)) },
@@ -66,7 +71,8 @@ describe('CarruselService', () => {
         { id_producto: 2, posicion: 2 },
       ]);
       await service.guardar([3, 2], 10);
-      expect(tx.delete).toHaveBeenCalledWith(CarruselInicio, {});
+      expect(from).toHaveBeenCalledWith(CarruselInicio);
+      expect(ejecutarBorrado).toHaveBeenCalled();
       expect(tx.insert).toHaveBeenCalledWith(CarruselInicio, [
         { id_producto: 3, posicion: 1 },
         { id_producto: 2, posicion: 2 },
@@ -84,7 +90,7 @@ describe('CarruselService', () => {
     it('permite vaciar el carrusel', async () => {
       repo.find.mockResolvedValue([]);
       await service.guardar([], 10);
-      expect(tx.delete).toHaveBeenCalled();
+      expect(ejecutarBorrado).toHaveBeenCalled();
       expect(tx.insert).not.toHaveBeenCalled();
     });
 
