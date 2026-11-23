@@ -28,15 +28,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const links = [
     { href: '/admin', label: 'Inicio', icon: LayoutDashboard },
     { href: '/admin/categorias', label: 'Categorías', icon: FolderTree },
-    { href: '/admin/productos', label: 'Productos', icon: Package },
-    { href: '/admin/carrusel', label: 'Carrusel del inicio', icon: GalleryHorizontal },
     { href: '/admin/opciones', label: 'Opciones', icon: Sliders },
+    { href: '/admin/productos', label: 'Productos', icon: Package },
     { href: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList },
     { href: '/admin/envios', label: 'Envíos', icon: Truck },
+    { href: '/admin/administradores', label: 'Administradores', icon: ShieldCheck },
+    { href: '/admin/niveles-vip', label: 'Niveles VIP', icon: Crown },
     { href: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3 },
     { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
-    { href: '/admin/niveles-vip', label: 'Niveles VIP', icon: Crown },
-    { href: '/admin/administradores', label: 'Administradores', icon: ShieldCheck },
+    { href: '/admin/carrusel', label: 'Carrusel del inicio', icon: GalleryHorizontal },
     { href: '/admin/auditoria', label: 'Auditoría', icon: ScrollText },
   
   ];
