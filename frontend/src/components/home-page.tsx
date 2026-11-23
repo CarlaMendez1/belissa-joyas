@@ -13,6 +13,7 @@ import { LogOut, LayoutDashboard, Crown, MapPin, Package, Heart } from "lucide-r
 import BotonFavorito from "@/components/boton-favorito"
 import HeroDinamico from "@/components/hero-dinamico"
 import Revelar from "@/components/revelar"
+import DescripcionExpandible from "@/components/descripcion-expandible"
 
 type Category = {
   id: string
@@ -302,9 +303,9 @@ export default function HomePage({
 
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProducts.map((product, idx) => (
-              <Revelar key={product.id} retraso={(idx % 3) * 100}>
-              <Link href={`/productos/${product.id}`}>
-                <Card className="overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:-translate-y-1 hover:border-dusty-rose hover:shadow-xl cursor-pointer">
+              <Revelar key={product.id} retraso={(idx % 3) * 100} className="h-full">
+              <Link href={`/productos/${product.id}`} className="block h-full">
+                <Card className="flex h-full flex-col overflow-hidden rounded-xl border-stone-200 bg-white p-0 transition-all hover:-translate-y-1 hover:border-dusty-rose hover:shadow-xl cursor-pointer">
                 <div className="relative aspect-square bg-blush-oat/30">
   <BotonFavorito idProducto={Number(product.id)} className="absolute right-3 top-3 z-10" />
   {product.imagenes?.[0] ? (
@@ -321,11 +322,13 @@ export default function HomePage({
     </div>
   )}
 </div>
-                  <div className="flex flex-col gap-2 p-6">
+                  <div className="flex flex-1 flex-col gap-2 p-6">
                     <span className="font-mono text-xs text-dusty-rose">{product.sku}</span>
-                    <h3 className="font-serif text-xl text-espresso-brown">{product.name}</h3>
-                    <p className="text-sm leading-relaxed text-stone-500">{product.description}</p>
-                        {product.precioDesde != null && (
+                    <h3 className="font-serif text-xl leading-7 text-espresso-brown">{product.name}</h3>
+                    <DescripcionExpandible texto={product.description} />
+                    {/* Precio y botón siempre abajo: las tarjetas de una fila quedan del mismo alto */}
+                    <div className="mt-auto pt-2">
+                    {product.precioDesde != null && (
                       <p className="font-sans text-lg font-semibold text-espresso-brown">
                         {product.variosPrecios && <span className="mr-1 text-sm font-normal text-stone-400">Desde</span>}
                         ${Math.round(product.precioDesde).toLocaleString('es-AR')}
@@ -333,10 +336,11 @@ export default function HomePage({
                     )}
                     <Button
                       variant="outline"
-                      className="mt-4 border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"
+                      className="mt-3 w-full border-stone-300 text-espresso-brown hover:bg-blush-oat/40 hover:text-espresso-brown"
                     >
                       Ver producto
                     </Button>
+                    </div>
                   </div>
                 </Card>
               </Link>
