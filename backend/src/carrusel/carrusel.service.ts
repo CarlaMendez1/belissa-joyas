@@ -44,7 +44,8 @@ export class CarruselService {
     const antes = (await this.repo.find({ order: { posicion: 'ASC' } })).map((f) => f.id_producto);
 
     await this.repo.manager.transaction(async (m) => {
-      await m.delete(CarruselInicio, {});
+      // delete(Entidad, {}) con criterio vacío lo rechaza TypeORM: se borra con el query builder
+      await m.createQueryBuilder().delete().from(CarruselInicio).execute();
       if (ids.length > 0) {
         await m.insert(
           CarruselInicio,
