@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Configuracion } from './configuracion.entity.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { AccionAuditoria } from '../auditoria/log-auditoria.entity.js';
+
+export const CLAVE_STOCK_MINIMO = 'stock_minimo';
+export const MAX_STOCK_MINIMO = 999;
 
 @Injectable()
 export class ConfiguracionService {
@@ -23,9 +26,23 @@ export class ConfiguracionService {
     return config.valor;
   }
 
+  /** Lee un valor numérico; si falta o no es un número, devuelve el valor por defecto. */
+  async obtenerNumero(clave: string, porDefecto: number): Promise<number> {
+    const config = await this.repo.findOneBy({ clave });
+    const n = Number(config?.valor);
+    return config && config.valor.trim() !== '' && Number.isFinite(n) ? n : porDefecto;
+  }
+
   async actualizar(clave: string, valor: string, id_usuario_admin?: number) {
     const config = await this.repo.findOneBy({ clave });
     if (!config) throw new NotFoundException(`Configuración '${clave}' no encontrada`);
+    if (clave === CLAVE_STOCK_MINIMO) {
+      const n = Number(valor);
+      if (String(valor).trim() === '' || !Number.isInteger(n) || n < 0 || n > MAX_STOCK_MINIMO) {
+        throw new BadRequestException(`El stock mínimo debe ser un número entero entre 0 y ${MAX_STOCK_MINIMO}`);
+      }
+      valor = String(n);
+    }
     const valorAnterior = config.valor;
     config.valor = valor;
     const guardada = await this.repo.save(config);

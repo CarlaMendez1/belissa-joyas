@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { ConfiguracionService, CLAVE_STOCK_MINIMO } from '../configuracion/configuracion.service.js';
 
 const ZONA = 'America/Argentina/Buenos_Aires';
-// Una variante cuenta como "stock crítico" con esta cantidad o menos
+// Una variante cuenta como "stock crítico" con esta cantidad o menos.
+// Es el valor por defecto: el administrador lo cambia desde Configuración.
 export const STOCK_MINIMO = 3;
 const CANTIDAD_LISTAS = 5;
 
@@ -16,7 +18,10 @@ type Fila = Record<string, unknown>;
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly configuracionService: ConfiguracionService,
+  ) {}
 
     async obtenerResumen() {
     const [ventas, usuarios, vip, stock, porDespachar, ultimasVentas, carritos, serie, categorias] = await Promise.all([
@@ -194,12 +199,13 @@ export class DashboardService {
   }
 
   private async stockCritico() {
+    const stockMinimo = await this.configuracionService.obtenerNumero(CLAVE_STOCK_MINIMO, STOCK_MINIMO);
     const [resumen] = await this.dataSource.query(
       `SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE va.stock_disponible <= 0) AS sin_stock
          FROM variante va
          JOIN producto p ON p.id_producto = va.id_producto
         WHERE va.estado = 'activa' AND p.estado = 'activa' AND va.stock_disponible <= $1`,
-      [STOCK_MINIMO],
+      [stockMinimo],
     );
     const filas: Fila[] = await this.dataSource.query(
       `SELECT va.id_variante, p.id_producto, p.nombre, va.stock_disponible,
@@ -212,10 +218,10 @@ export class DashboardService {
         WHERE va.estado = 'activa' AND p.estado = 'activa' AND va.stock_disponible <= $1
         ORDER BY va.stock_disponible ASC, p.nombre ASC
         LIMIT ${CANTIDAD_LISTAS}`,
-      [STOCK_MINIMO],
+      [stockMinimo],
     );
     return {
-      umbral: STOCK_MINIMO,
+      umbral: stockMinimo,
       total: aNumero(resumen.total),
       sin_stock: aNumero(resumen.sin_stock),
       items: filas.map((f) => ({

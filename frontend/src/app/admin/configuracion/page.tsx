@@ -8,11 +8,14 @@ import { Input } from '@/components/ui/input';
 
 // Claves que representan un tiempo en minutos, y por eso se editan como horas + minutos
 const CLAVES_TIEMPO = ['tiempo_abandono_carrito_minutos'];
+// Claves que son una cantidad entera de unidades (0 o más)
+const CLAVES_UNIDADES = ['stock_minimo'];
 // Estas claves se editan desde la pantalla de Envíos, no desde acá
 const CLAVES_DE_ENVIOS = ['envio_precio_base', 'envio_gratis_desde', 'retiro_local_activo', 'retiro_local_direccion'];
 
 const NOMBRES_AMIGABLES: Record<string, string> = {
   tiempo_abandono_carrito_minutos: 'Tiempo de inactividad para considerar un carrito abandonado',
+  stock_minimo: 'Stock mínimo para avisar de stock crítico',
 };
 
 function nombreAmigable(clave: string) {
@@ -76,6 +79,13 @@ export default function AdminConfiguracionPage() {
         return;
       }
       nuevoValor = String(totalMin);
+    } else if (CLAVES_UNIDADES.includes(clave)) {
+      const n = Number(valorEditado);
+      if (valorEditado.trim() === '' || !Number.isInteger(n) || n < 0 || n > 999) {
+        setError('Ingresá un número entero entre 0 y 999');
+        return;
+      }
+      nuevoValor = String(n);
     } else {
       if (!valorEditado.trim()) {
         setError('El valor no puede estar vacío');
@@ -104,6 +114,9 @@ export default function AdminConfiguracionPage() {
       if (h === 0) return `${m} min`;
       if (m === 0) return `${h} h`;
       return `${h} h ${m} min`;
+    }
+    if (CLAVES_UNIDADES.includes(config.clave)) {
+      return `${config.valor} ${Number(config.valor) === 1 ? 'unidad' : 'unidades'}`;
     }
     return config.valor;
   }
@@ -172,6 +185,8 @@ export default function AdminConfiguracionPage() {
                   ) : (
                     <div className="flex items-center gap-2">
                       <Input
+                        type={CLAVES_UNIDADES.includes(config.clave) ? 'number' : 'text'}
+                        min={CLAVES_UNIDADES.includes(config.clave) ? 0 : undefined}
                         value={valorEditado}
                         onChange={(e) => setValorEditado(e.target.value)}
                         className="w-24 text-right"

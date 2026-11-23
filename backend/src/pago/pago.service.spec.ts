@@ -206,6 +206,7 @@ describe('PagoService', () => {
         mockVentaRepo.findOneBy.mockResolvedValue({ id_venta: 99, id_usuario: 1 });
         mockVentaRepo.findOne.mockResolvedValue({
           id_venta: 99, id_usuario: 1, id_carrito: 7, precio_total: '22000', costo_envio: '0', tipo_entrega: 'retiro',
+          fecha_compra: new Date('2026-11-22T21:40:00Z'),
           usuario: { nombre: 'Lucía', email: 'lucia@mail.com' },
         });
         mockDetalleRepo.find.mockResolvedValue([
@@ -222,6 +223,9 @@ describe('PagoService', () => {
         expect(texto).toContain('Envío: Gratis');
         expect(texto).toContain('Total pagado: $22.000');
         expect(texto).toContain('Entrega: Retiro en el local');
+        // 21:40 UTC = 18:40 en Argentina
+        expect(texto).toContain('Fecha y hora de la compra: 22/11/2026 18:40 hs');
+        expect(mockEmailService.enviar.mock.calls[0][3]).toContain('22/11/2026 18:40 hs');
       });
 
       const ventaConUsuario = {

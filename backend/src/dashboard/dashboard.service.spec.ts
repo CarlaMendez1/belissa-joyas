@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { DashboardService, STOCK_MINIMO } from './dashboard.service';
+import { ConfiguracionService } from '../configuracion/configuracion.service';
 
 // Responde cada consulta según un fragmento único de su SQL
 type Respuestas = Array<[string, unknown]>;
@@ -8,6 +9,7 @@ type Respuestas = Array<[string, unknown]>;
 describe('DashboardService', () => {
   let service: DashboardService;
   const mockDataSource = { query: jest.fn() };
+  const mockConfiguracion = { obtenerNumero: jest.fn() };
 
   const FECHA = new Date('2026-11-10T15:30:00Z');
 
@@ -55,10 +57,16 @@ describe('DashboardService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DashboardService, { provide: DataSource, useValue: mockDataSource }],
+      providers: [
+        DashboardService,
+        { provide: DataSource, useValue: mockDataSource },
+        { provide: ConfiguracionService, useValue: mockConfiguracion },
+      ],
     }).compile();
     service = module.get(DashboardService);
     jest.clearAllMocks();
+    // Sin cambios del administrador, rige el valor por defecto
+    mockConfiguracion.obtenerNumero.mockImplementation(async (_clave: string, porDefecto: number) => porDefecto);
   });
 
   it('el umbral de stock crítico es de 3 unidades', () => {
@@ -113,6 +121,14 @@ describe('DashboardService', () => {
         id_variante: 11, id_producto: 3, nombre: 'Anillo solitario plata 925', detalle: 'Talle 16 · Plata', stock: 0,
       });
       expect(mockDataSource.query).toHaveBeenCalledWith(expect.stringContaining('stock_disponible <= $1'), [STOCK_MINIMO]);
+    });
+
+    it('stock crítico: usa el stock mínimo configurado por el administrador', async () => {
+      mockConfiguracion.obtenerNumero.mockResolvedValue(10);
+      const r = await resumenConMocks();
+      expect(mockConfiguracion.obtenerNumero).toHaveBeenCalledWith('stock_minimo', STOCK_MINIMO);
+      expect(r.stock_critico.umbral).toBe(10);
+      expect(mockDataSource.query).toHaveBeenCalledWith(expect.stringContaining('stock_disponible <= $1'), [10]);
     });
 
     it('pedidos por despachar: arma el nombre del cliente y la provincia (null en retiro)', async () => {

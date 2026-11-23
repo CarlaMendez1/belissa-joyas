@@ -283,6 +283,15 @@ export class PagoService {
     return { recibido: true };
   }
 
+  // Fecha y hora en horario de Argentina (el servidor guarda y corre en UTC)
+  private formatearFechaHora(fecha: Date): string {
+    const f = new Date(fecha);
+    const zona = 'America/Argentina/Buenos_Aires';
+    const dia = f.toLocaleDateString('es-AR', { timeZone: zona, day: '2-digit', month: '2-digit', year: 'numeric' });
+    const hora = f.toLocaleTimeString('es-AR', { timeZone: zona, hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${dia} ${hora} hs`;
+  }
+
   // Correo de "Recibimos tu pago". Nunca debe romper el webhook: si falla, solo se registra.
   private async enviarConfirmacionCompra(id_venta: number): Promise<void> {
     try {
@@ -332,12 +341,15 @@ export class PagoService {
         ? 'Te avisaremos por correo cuando despachemos tu pedido.'
         : 'Te avisaremos por correo cuando tu pedido esté listo para retirar.';
       const nombre = venta.usuario.nombre;
+      const fechaCompra = this.formatearFechaHora(venta.fecha_compra ?? new Date());
       const hayDescuento = descuento > 0.005;
 
       const texto = [
         `Hola ${nombre}!`,
         '',
         `Recibimos tu pago. Tu pedido #${id_venta} está confirmado.`,
+        '',
+        `Fecha y hora de la compra: ${fechaCompra}`,
         '',
         'Detalle de tu compra:',
         ...productos.map((p) => `- ${p.nombre} x${p.cantidad}: ${p.importe}`),
@@ -359,6 +371,7 @@ export class PagoService {
         parrafos: [`Recibimos tu pago. Tu pedido #${id_venta} está confirmado.`, 'Este es el detalle de tu compra:'],
         productos,
         datos: [
+          { etiqueta: 'Fecha y hora', valor: fechaCompra },
           ...(hayDescuento
             ? [
                 { etiqueta: 'Subtotal', valor: pesos(subtotalLista) },
