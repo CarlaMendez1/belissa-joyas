@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfiguracionService } from './configuracion.service';
 import { Configuracion } from './configuracion.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
@@ -72,6 +72,35 @@ describe('ConfiguracionService', () => {
       await expect(service.actualizar('inexistente', '1', 1)).rejects.toThrow(NotFoundException);
       expect(mockRepo.save).not.toHaveBeenCalled();
       expect(mockAuditoria.registrar).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('obtenerNumero()', () => {
+    it('devuelve el valor numérico guardado', async () => {
+      mockRepo.findOneBy.mockResolvedValue({ clave: 'stock_minimo', valor: '5' });
+      await expect(service.obtenerNumero('stock_minimo', 3)).resolves.toBe(5);
+    });
+
+    it('usa el valor por defecto si la clave no existe o no es un número', async () => {
+      mockRepo.findOneBy.mockResolvedValueOnce(null);
+      await expect(service.obtenerNumero('stock_minimo', 3)).resolves.toBe(3);
+      mockRepo.findOneBy.mockResolvedValueOnce({ clave: 'stock_minimo', valor: 'abc' });
+      await expect(service.obtenerNumero('stock_minimo', 3)).resolves.toBe(3);
+    });
+  });
+
+  describe('actualizar() de stock_minimo', () => {
+    it('guarda un entero válido, incluido 0', async () => {
+      mockRepo.findOneBy.mockResolvedValue({ clave: 'stock_minimo', valor: '3' });
+      mockRepo.save.mockImplementation(async (c) => c);
+      const r = await service.actualizar('stock_minimo', '0', 1);
+      expect(r.valor).toBe('0');
+    });
+
+    it.each(['-1', '2.5', 'abc', '', '1000'])('rechaza el valor %p', async (valor) => {
+      mockRepo.findOneBy.mockResolvedValue({ clave: 'stock_minimo', valor: '3' });
+      await expect(service.actualizar('stock_minimo', valor, 1)).rejects.toThrow(BadRequestException);
+      expect(mockRepo.save).not.toHaveBeenCalled();
     });
   });
 });
