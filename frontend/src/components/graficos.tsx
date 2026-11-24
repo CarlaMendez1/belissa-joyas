@@ -18,13 +18,16 @@ function maximoLindo(max: number): number {
 export function GraficoLinea({
   puntos,
   formato,
+  comparacion,
 }: {
   puntos: Punto[];
   formato: (n: number) => string;
+  // Serie del período anterior: se dibuja punteada, alineada por posición
+  comparacion?: Punto[];
 }) {
   if (puntos.length === 0) return null;
 
-  const max = maximoLindo(Math.max(...puntos.map((p) => p.valor)));
+  const max = maximoLindo(Math.max(...puntos.map((p) => p.valor), ...(comparacion ?? []).map((p) => p.valor)));
   const anchoUtil = ANCHO - MARGEN.izquierda - MARGEN.derecha;
   const altoUtil = ALTO - MARGEN.arriba - MARGEN.abajo;
   const x = (i: number) =>
@@ -55,6 +58,19 @@ export function GraficoLinea({
           </text>
         </g>
       ))}
+      {comparacion && comparacion.length > 0 && (
+        <path
+          d={comparacion
+            .slice(0, puntos.length)
+            .map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.valor).toFixed(1)}`)
+            .join(' ')}
+          fill="none"
+          className="stroke-stone-400"
+          strokeWidth={2}
+          strokeDasharray="5 4"
+          strokeLinejoin="round"
+        />
+      )}
       <path d={area} fill="currentColor" opacity={0.12} />
       <path d={linea} fill="none" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />
       {mostrarPuntos &&

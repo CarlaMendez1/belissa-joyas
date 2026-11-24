@@ -25,4 +25,25 @@ export class EstadisticasController {
   envios(@Query('desde') desde?: string, @Query('hasta') hasta?: string) {
     return this.service.envios(this.service.resolverRango(desde, hasta));
   }
+
+  // Paneles del módulo (cada uno incluye la comparación con el período anterior)
+  @Get('panel/ventas')
+  panelVentas(@Query('desde') desde?: string, @Query('hasta') hasta?: string) {
+    return this.service.panelVentas(this.service.resolverRango(desde, hasta));
+  }
+
+  @Get('panel/productos')
+  panelProductos(@Query('desde') desde?: string, @Query('hasta') hasta?: string) {
+    return this.service.panelProductos(this.service.resolverRango(desde, hasta));
+  }
+
+  @Get('panel/clientes')
+  panelClientes(@Query('desde') desde?: string, @Query('hasta') hasta?: string) {
+    return this.service.panelClientes(this.service.resolverRango(desde, hasta));
+  }
+
+  @Get('panel/rescate')
+  panelRescate(@Query('desde') desde?: string, @Query('hasta') hasta?: string) {
+    return this.service.panelRescate(this.service.resolverRango(desde, hasta));
+  }
 }
