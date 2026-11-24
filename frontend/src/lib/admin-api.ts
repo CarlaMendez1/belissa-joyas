@@ -453,25 +453,6 @@ export async function cambiarEstadoPedido(
 // --- Estadísticas ---
 export type Agrupacion = 'dia' | 'semana' | 'mes';
 
-export type EstadisticasVentas = {
-  rango: { desde: string; hasta: string };
-  agrupar: Agrupacion;
-  resumen: {
-    cantidad: number;
-    monto_productos: number;
-    monto_envio: number;
-    monto_total: number;
-    ticket_promedio: number;
-  };
-  serie: { periodo: string; cantidad: number; monto: number }[];
-};
-
-export type EstadisticasProductos = {
-  rango: { desde: string; hasta: string };
-  mas_vendidos: { id_producto: number; nombre: string; unidades: number; monto: number }[];
-  por_categoria: { categoria: string; unidades: number; monto: number }[];
-};
-
 export type EstadisticasEnvios = {
   rango: { desde: string; hasta: string };
   por_tipo: { tipo: string; cantidad: number; monto_envio: number; con_envio_gratis: number }[];
@@ -481,27 +462,106 @@ export type EstadisticasEnvios = {
   dias_hasta_entrega: number | null;
 };
 
-export type Estadisticas = {
-  ventas: EstadisticasVentas;
-  productos: EstadisticasProductos;
+type Rango = { desde: string; hasta: string };
+type Resumen = { cantidad: number; monto_total: number; ticket_promedio: number; pendientes: number };
+type SeriePunto = { periodo: string; cantidad: number; monto: number };
+
+export type PanelVentas = {
+  rango: Rango;
+  anterior: Rango;
+  actual: Resumen;
+  previo: Resumen;
+  serie_actual: SeriePunto[];
+  serie_anterior: SeriePunto[];
+  estados: { estado: 'confirmada' | 'pendiente' | 'cancelada'; cantidad: number; importe: number }[];
+};
+
+export type PanelProductos = {
+  rango: Rango;
+  umbral: number;
+  unidades_vendidas: number;
+  productos_con_ventas: number;
+  variantes_stock_bajo: number;
+  variantes_sin_stock: number;
+  mas_vendidos: { id_producto: number; nombre: string; unidades: number }[];
+  menos_vendidos: { id_producto: number; nombre: string; unidades: number }[];
+  variantes: {
+    id_variante: number;
+    producto: string;
+    material: string;
+    medida: string;
+    stock: number;
+    estado: 'ok' | 'stock_bajo' | 'sin_stock';
+  }[];
+};
+
+export type PanelClientes = {
+  rango: Rango;
+  anterior: Rango;
+  registrados: number;
+  cumplen_vip: number;
+  compraron: number;
+  recurrentes: number;
+  compraron_anterior: number;
+  recurrentes_anterior: number;
+  frecuencia: { etiqueta: string; clientes: number }[];
+  por_nivel: { nivel: string; clientes: number; monto_min: number; compras_min: number }[];
+  top_clientes: {
+    id_usuario: number;
+    nombre: string;
+    nivel: string;
+    compras: number;
+    importe: number;
+    proximo_nivel: string | null;
+    faltan_compras: number;
+    faltan_monto: number;
+  }[];
+};
+
+type ResumenRescate = {
+  abandonados: number;
+  notificados: number;
+  recuperados: number;
+  monto_recuperado: number;
+  tasa_recuperacion: number;
+};
+
+export type PanelRescate = {
+  rango: Rango;
+  anterior: Rango;
+  actual: ResumenRescate;
+  previo: ResumenRescate;
+  ventas_recuperadas: { cliente: string; fecha_aviso: string; fecha_compra: string; monto: number }[];
+};
+
+export type PanelEstadisticas = {
+  ventas: PanelVentas;
+  productos: PanelProductos;
+  clientes: PanelClientes;
+  rescate: PanelRescate;
   envios: EstadisticasEnvios;
 };
 
-export async function getEstadisticas(
+export type SeccionEstadisticas = keyof PanelEstadisticas;
+
+const RUTAS_ESTADISTICAS: Record<SeccionEstadisticas, string> = {
+  ventas: 'panel/ventas',
+  productos: 'panel/productos',
+  clientes: 'panel/clientes',
+  rescate: 'panel/rescate',
+  envios: 'envios',
+};
+
+export async function getEstadisticas<S extends SeccionEstadisticas>(
   token: string,
-  filtros: { desde: string; hasta: string; agrupar: Agrupacion },
-): Promise<Estadisticas> {
-  const rango = `desde=${filtros.desde}&hasta=${filtros.hasta}`;
-  const pedir = async <T>(ruta: string): Promise<T> => {
-    const res = await fetch(`${API}/estadisticas/${ruta}`, { headers: headers(token), cache: 'no-store' });
-    return manejarRespuesta(res);
-  };
-  const [ventas, productos, envios] = await Promise.all([
-    pedir<EstadisticasVentas>(`ventas?${rango}&agrupar=${filtros.agrupar}`),
-    pedir<EstadisticasProductos>(`productos?${rango}`),
-    pedir<EstadisticasEnvios>(`envios?${rango}`),
-  ]);
-  return { ventas, productos, envios };
+  seccion: S,
+  rango: Rango,
+): Promise<PanelEstadisticas[S]> {
+  const res = await fetch(
+    `${API}/estadisticas/${RUTAS_ESTADISTICAS[seccion]}?desde=${rango.desde}&hasta=${rango.hasta}`,
+    { headers: headers(token), cache: 'no-store' },
+  );
+  return manejarRespuesta(res);
 }
 
 // --- Administradores ---
