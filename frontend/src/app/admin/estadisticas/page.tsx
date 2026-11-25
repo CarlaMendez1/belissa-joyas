@@ -543,7 +543,10 @@ export default function AdminEstadisticasPage() {
     if (!datos) return;
     setExportando(true);
     try {
-      await exportarPDF(especificacionPDF(seccion, datos, rango, compararActivo), `estadisticas_${seccion}_${rango.desde}_a_${rango.hasta}`);
+      const spec = especificacionPDF(seccion, datos, rango, compararActivo);
+      const u = session?.user;
+      spec.emitidoPor = u?.name ? `${u.name}${u.email ? ` (${u.email})` : ''}` : u?.email || undefined;
+      await exportarPDF(spec, `estadisticas_${seccion}_${rango.desde}_a_${rango.hasta}`);
     } finally {
       setExportando(false);
     }
