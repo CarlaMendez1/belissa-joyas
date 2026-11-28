@@ -21,6 +21,17 @@ export const collar = {
   stockInicial: 5,
 };
 
+/** Producto de la prueba de compra completa: stock propio para no interferir con las demás pruebas. */
+export const pulsera = {
+  nombre: `Pulsera Sol ${sufijo}`,
+  sku: `E2E-P-${sufijo}`,
+  precio: 15000,
+  stockInicial: 8,
+};
+
+/** Clienta que se registra en la prueba de compra completa. */
+export const clientaCompleta = { nombre: 'Marina', apellido: 'Ferro', email: `marina.ferro.${sufijo}@belissa.com` };
+
 export const envioCordoba = 5800;
 export const direccion = {
   destinatario: 'Lucía Paz',

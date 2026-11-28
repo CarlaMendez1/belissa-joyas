@@ -1,5 +1,5 @@
 import { Client } from 'pg';
-import { admin, clienta, collar, envioCordoba, otraClienta, password, producto, sufijo } from './datos';
+import { admin, clienta, collar, pulsera, envioCordoba, otraClienta, password, producto, sufijo } from './datos';
 
 const API = 'http://localhost:3001';
 
@@ -61,6 +61,16 @@ export default async function globalSetup() {
     await db.query(
       `INSERT INTO variante (id_producto, codigo_sku, precio_venta, stock_disponible) VALUES ($1, $2, $3, $4)`,
       [prod2.rows[0].id_producto, `${collar.sku}-V1`, collar.precio, collar.stockInicial],
+    );
+
+    // Producto para la prueba de compra completa
+    const prod3 = await db.query(
+      `INSERT INTO producto (id_subcategoria, codigo_sku, nombre) VALUES ($1, $2, $3) RETURNING id_producto`,
+      [sub.rows[0].id_subcategoria, pulsera.sku, pulsera.nombre],
+    );
+    await db.query(
+      `INSERT INTO variante (id_producto, codigo_sku, precio_venta, stock_disponible) VALUES ($1, $2, $3, $4)`,
+      [prod3.rows[0].id_producto, `${pulsera.sku}-V1`, pulsera.precio, pulsera.stockInicial],
     );
 
     // Envío: provincia con tarifa activa, y retiro en local habilitado
